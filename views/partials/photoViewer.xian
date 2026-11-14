@@ -1,0 +1,98 @@
+{{!-- In-page photo viewer with zoom. Any <a class="js-photo" href="IMG" data-caption="..."> opens it; the page never navigates away. --}}
+<dialog id="photo-viewer" class="dialog max-w-4xl" aria-label="Photo">
+  <div class="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
+    <p class="js-photo-caption truncate text-sm font-semibold"></p>
+    <div class="flex shrink-0 items-center gap-1">
+      <button type="button" class="js-zoom-out icon-btn" aria-label="Zoom out" title="Zoom out">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6"/></svg>
+      </button>
+      <span class="js-zoom-level w-12 text-center text-xs font-semibold tabular-nums text-moss">100%</span>
+      <button type="button" class="js-zoom-in icon-btn" aria-label="Zoom in" title="Zoom in">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>
+      </button>
+      <span class="mx-1 h-5 w-px bg-line"></span>
+      <button type="button" class="js-photo-close icon-btn text-xl leading-none" aria-label="Close">×</button>
+    </div>
+  </div>
+  <div class="js-photo-stage flex h-[70vh] items-center justify-center overflow-hidden bg-ivory select-none">
+    <img class="js-photo-img max-h-full max-w-full cursor-zoom-in rounded-lg object-contain transition-transform duration-150" alt="" draggable="false">
+  </div>
+  <div class="flex items-center justify-between gap-2 rounded-b-2xl border-t border-line px-5 py-3">
+    <p class="text-xs text-moss">Click the photo or scroll to zoom · drag to move</p>
+    <button type="button" class="js-photo-close btn-ghost-danger btn-sm">Close</button>
+  </div>
+</dialog>
+<script>
+  (() => {
+    const dialog = document.getElementById("photo-viewer");
+    if (!dialog || typeof dialog.showModal !== "function") return; // old browsers: links just open the image
+    const stage = dialog.querySelector(".js-photo-stage");
+    const img = dialog.querySelector(".js-photo-img");
+    const caption = dialog.querySelector(".js-photo-caption");
+    const level = dialog.querySelector(".js-zoom-level");
+    const MIN = 1, MAX = 4;
+    let scale = 1, x = 0, y = 0, drag = null, moved = false;
+
+    const clamp = () => {
+      // Keep the zoomed photo from being dragged out of view.
+      const maxX = (img.clientWidth * (scale - 1)) / 2, maxY = (img.clientHeight * (scale - 1)) / 2;
+      x = Math.max(-maxX, Math.min(maxX, x));
+      y = Math.max(-maxY, Math.min(maxY, y));
+    };
+    const render = () => {
+      clamp();
+      img.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+      img.classList.toggle("cursor-zoom-in", scale === MIN);
+      img.classList.toggle("cursor-grab", scale > MIN);
+      level.textContent = Math.round(scale * 100) + "%";
+    };
+    const zoomTo = (s) => {
+      scale = Math.max(MIN, Math.min(MAX, s));
+      if (scale === MIN) x = y = 0;
+      render();
+    };
+
+    document.querySelectorAll(".js-photo").forEach((link) => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        img.src = link.getAttribute("href");
+        img.alt = caption.textContent = link.dataset.caption || "Photo";
+        scale = 1; x = y = 0; render();
+        document.documentElement.style.overflow = "hidden";
+        dialog.showModal();
+      });
+    });
+
+    dialog.querySelector(".js-zoom-in").addEventListener("click", () => zoomTo(scale + 0.5));
+    dialog.querySelector(".js-zoom-out").addEventListener("click", () => zoomTo(scale - 0.5));
+    img.addEventListener("click", () => { if (!moved) zoomTo(scale === MIN ? 2 : MIN); });
+    stage.addEventListener("wheel", (e) => { e.preventDefault(); zoomTo(scale + (e.deltaY < 0 ? 0.25 : -0.25)); }, { passive: false });
+
+    img.addEventListener("pointerdown", (e) => {
+      moved = false;
+      if (scale === MIN) return;
+      drag = { px: e.clientX, py: e.clientY, x, y };
+      img.setPointerCapture(e.pointerId);
+      img.classList.replace("cursor-grab", "cursor-grabbing");
+      img.style.transitionDuration = "0ms";
+    });
+    img.addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.px, dy = e.clientY - drag.py;
+      if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
+      x = drag.x + dx; y = drag.y + dy; render();
+    });
+    const endDrag = () => {
+      if (!drag) return;
+      drag = null;
+      img.classList.replace("cursor-grabbing", "cursor-grab");
+      img.style.transitionDuration = "";
+    };
+    img.addEventListener("pointerup", endDrag);
+    img.addEventListener("pointercancel", endDrag);
+
+    dialog.querySelectorAll(".js-photo-close").forEach((b) => b.addEventListener("click", () => dialog.close()));
+    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener("close", () => { document.documentElement.style.overflow = ""; img.removeAttribute("src"); });
+  })();
+</script>

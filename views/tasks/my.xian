@@ -1,0 +1,57 @@
+{{> head}}
+<div class="page-header">
+  <div>
+    <p class="eyebrow">Today</p>
+    <h1 class="page-title">My Tasks</h1>
+    <p class="page-sub">{{active.length}} open · {{done.length}} finished today</p>
+  </div>
+  <a href="/work-orders/new" class="btn-secondary">Report an issue</a>
+</div>
+
+<div class="grid gap-4 md:grid-cols-2">
+  {{#each active}}
+  <article class="card flex flex-col {{#if (eq status "IN_PROGRESS")}}border-steel/40 ring-4 ring-steel-soft{{/if}}">
+    <div class="flex items-start justify-between gap-2">
+      <div>
+        <div class="font-display text-3xl font-semibold leading-tight">Room {{room.roomNo}}</div>
+        <div class="muted">{{room.type}} · Floor {{room.floor}}</div>
+      </div>
+      <div class="flex flex-col items-end gap-1.5">{{badge status}}{{priorityBadge priority}}</div>
+    </div>
+    <p class="mt-4 border-t border-line pt-4 text-sm"><b>{{title}}</b> <span class="font-mono text-xs text-moss">· {{code}}</span></p>
+    {{#if dueAt}}<p class="text-sm text-moss">Due {{formatDate dueAt}}</p>{{/if}}
+    {{#if notes}}<p class="notice-warn mt-3">{{nl2br notes}}</p>{{/if}}
+
+    {{#if (eq status "PENDING")}}
+    <form method="POST" action="/tasks/{{id}}/start" class="mt-auto pt-5">
+      <button class="btn w-full py-3">Start cleaning</button>
+    </form>
+    {{else}}
+    <p class="mt-2 text-xs text-moss">Started {{formatTime startedAt}} ({{timeAgo startedAt}})</p>
+    <form method="POST" action="/tasks/{{id}}/complete" class="mt-3 space-y-2">
+      <textarea name="notes" rows="2" class="input" placeholder="Notes (optional) — e.g. guest left items at reception"></textarea>
+      <button class="btn w-full py-3">Mark as done</button>
+    </form>
+    {{/if}}
+    <a href="/work-orders/new?roomId={{room.id}}&taskId={{id}}" class="mt-4 block text-center text-sm font-medium text-terracotta hover:underline underline-offset-4">Found a problem? Report a maintenance issue</a>
+  </article>
+  {{else}}
+  <div class="card py-12 text-center md:col-span-2">
+    <span class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-leaf-soft text-leaf"><svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></span>
+    <p class="font-display text-xl font-semibold">No open tasks</p>
+    <p class="muted">You'll get a notification when your supervisor assigns a room.</p>
+  </div>
+  {{/each}}
+</div>
+
+{{#if done.length}}
+<section class="card mt-6">
+  <h2 class="section-title">Finished today</h2>
+  <ul class="divide-y divide-line text-sm">
+    {{#each done}}
+    <li class="list-row flex-wrap"><span>Room <b>{{room.roomNo}}</b> · {{title}}</span><span class="flex items-center gap-2">{{badge status}} <span class="text-xs text-moss">{{formatTime completedAt}} · {{minutesBetween startedAt completedAt}}</span></span></li>
+    {{/each}}
+  </ul>
+</section>
+{{/if}}
+{{> footer}}

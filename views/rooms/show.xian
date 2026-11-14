@@ -1,0 +1,54 @@
+{{> head}}
+<a href="/rooms" class="back-link">← Room board</a>
+<div class="page-header mt-3">
+  <div>
+    <h1 class="page-title flex flex-wrap items-center gap-3">Room {{room.roomNo}} {{badge room.status}}</h1>
+    <p class="page-sub">{{room.type}} · Floor {{room.floor}}{{#if room.notes}} · {{room.notes}}{{/if}}</p>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    {{#if canCheckInOut}}
+      {{#if (eq room.status "OCCUPIED")}}<form method="POST" action="/rooms/{{room.id}}/checkout"><button class="btn-secondary">Check out guest</button></form>{{/if}}
+      {{#if (eq room.status "INSPECTED")}}<form method="POST" action="/rooms/{{room.id}}/checkin"><button class="btn">Assign to guest</button></form>{{/if}}
+    {{/if}}
+    {{#if canAssign}}<a href="/tasks?roomId={{room.id}}" class="btn-secondary">Assign task</a>{{/if}}
+    {{#if canInspect}}<a href="/inspections/new?roomId={{room.id}}" class="btn">Inspect room</a>{{/if}}  </div>
+</div>
+
+<div class="grid gap-5 lg:grid-cols-2">
+  <section class="card overflow-x-auto p-0">
+    <h2 class="section-title px-5 pt-5 sm:px-6">Cleaning tasks</h2>
+    <table class="table">
+      <thead><tr><th>Code</th><th>Task</th><th>Housekeeper</th><th>Status</th><th>Done</th></tr></thead>
+      <tbody>
+        {{#each room.tasks}}
+        <tr><td class="whitespace-nowrap">{{code}}</td><td>{{title}} {{priorityBadge priority}}</td><td>{{housekeeper.name}}</td><td>{{badge status}}</td><td class="whitespace-nowrap">{{formatDate completedAt}}</td></tr>
+        {{else}}<tr><td colspan="5" class="py-8 text-center text-moss">No tasks yet.</td></tr>{{/each}}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card overflow-x-auto p-0">
+    <h2 class="section-title px-5 pt-5 sm:px-6">Work orders</h2>
+    <table class="table">
+      <thead><tr><th>Code</th><th>Issue</th><th>Technician</th><th>Status</th></tr></thead>
+      <tbody>
+        {{#each room.workOrders}}
+        <tr><td><a href="/work-orders/{{id}}" class="link">{{code}}</a></td><td>{{category}} — {{description}}</td><td>{{fallback assignedTo.name "—"}}</td><td>{{badge status}}</td></tr>
+        {{else}}<tr><td colspan="4" class="py-8 text-center text-moss">No work orders.</td></tr>{{/each}}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card overflow-x-auto p-0 lg:col-span-2">
+    <h2 class="section-title px-5 pt-5 sm:px-6">Inspections</h2>
+    <table class="table">
+      <thead><tr><th>Date</th><th>Supervisor</th><th>Result</th><th>Remarks</th></tr></thead>
+      <tbody>
+        {{#each room.inspections}}
+        <tr><td class="whitespace-nowrap">{{formatDate createdAt}}</td><td>{{supervisor.name}}</td><td>{{badge result}}</td><td>{{fallback remarks "—"}}</td></tr>
+        {{else}}<tr><td colspan="4" class="py-8 text-center text-moss">Not inspected yet.</td></tr>{{/each}}
+      </tbody>
+    </table>
+  </section>
+</div>
+{{> footer}}

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#233E35">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+            display: ["Fraunces", "Georgia", "serif"],
+          },
+          colors: {
+            forest: "#233E35",                                        // main buttons, headings, primary text
+            pine: "#365446",                                          // button hover
+            ivory: "#FAF9F6",                                         // page background
+            moss: "#45584E",                                          // secondary text
+            sage: "#EEF1E9",                                          // badges, subtle backgrounds
+            line: "#DEDFD7",                                          // borders, dividers
+            gold: { DEFAULT: "#9A7A43", soft: "#F5EFE3", deep: "#6F5729" },        // accent
+            terracotta: { DEFAULT: "#923E2C", soft: "#F6EAE6" },     // cancel / destructive
+            // Status tints derived from the palette greens
+            leaf: { DEFAULT: "#2F5B46", soft: "#E4EDE6" },
+            steel: { DEFAULT: "#3E5A5E", soft: "#E8EEEC" },
+          },
+          boxShadow: {
+            soft: "0 1px 2px rgba(35,62,53,.04), 0 6px 20px -10px rgba(35,62,53,.12)",
+            lift: "0 2px 4px rgba(35,62,53,.05), 0 14px 32px -12px rgba(35,62,53,.22)",
+          },
+        },
+      },
+    };
+  </script>
+  <style type="text/tailwindcss">
+    @layer base {
+      body { @apply font-sans antialiased; }
+      ::selection { @apply bg-gold/20 text-forest; }
+      dialog::backdrop { @apply bg-forest/40 backdrop-blur-[2px]; }
+      dialog[open] { animation: rc-pop .16s ease-out; }
+      @keyframes rc-pop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+      summary { list-style: none; }
+      summary::-webkit-details-marker { display: none; }
+    }
+    @layer components {
+      .card { @apply bg-white rounded-2xl border border-line shadow-soft p-5 sm:p-6; }
+      .page-header { @apply mb-7 flex flex-wrap items-end justify-between gap-4; }
+      .eyebrow { @apply mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-gold; }
+      .page-title { @apply font-display text-[1.75rem] sm:text-[2rem] font-semibold leading-tight tracking-tight text-forest; }
+      .page-sub { @apply mt-1 text-sm text-moss; }
+      .section-title { @apply mb-4 flex items-center gap-2 text-[15px] font-semibold text-forest; }
+      .count { @apply inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-sage px-2 py-0.5 text-[11px] font-semibold text-moss; }
+      .label { @apply mb-1.5 block text-xs font-semibold tracking-wide text-moss; }
+      .input { @apply w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm text-forest shadow-[inset_0_1px_1px_rgba(35,62,53,.03)] transition placeholder:text-moss/50 hover:border-moss/30 focus:border-gold focus:outline-none focus:ring-4 focus:ring-gold/15 disabled:bg-sage/60; }
+      .btn { @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-forest bg-forest px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:border-pine hover:bg-pine focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/30 active:translate-y-px disabled:opacity-50; }
+      .btn-secondary { @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-semibold text-forest shadow-sm transition hover:border-moss/30 hover:bg-sage focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/30 active:translate-y-px; }
+      .btn-danger { @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-terracotta bg-terracotta px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-terracotta/90 focus:outline-none focus-visible:ring-4 focus-visible:ring-terracotta/25 active:translate-y-px; }
+      .btn-ghost-danger { @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-terracotta/30 bg-white px-4 py-2.5 text-sm font-semibold text-terracotta shadow-sm transition hover:bg-terracotta-soft focus:outline-none focus-visible:ring-4 focus-visible:ring-terracotta/20 active:translate-y-px; }
+      .btn-sm { @apply rounded-md px-3 py-1.5 text-xs; }
+      .btn-lg { @apply px-6 py-3 text-base; }
+      .table { @apply w-full text-sm; }
+      .table th { @apply whitespace-nowrap border-b border-line px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-moss; }
+      .table td { @apply border-b border-line/70 px-4 py-3 align-top; }
+      .table tbody tr { @apply transition-colors hover:bg-ivory; }
+      .table tbody tr:last-child td { @apply border-b-0; }
+      .card.p-0 > .table thead th, .card.p-0 .table-head th { @apply bg-sage/60 first:pl-5 last:pr-5; }
+      .card.p-0 > .table td { @apply first:pl-5 last:pr-5; }
+      .link { @apply font-semibold text-forest decoration-gold/60 decoration-2 underline-offset-4 transition hover:text-pine hover:underline; }
+      .muted { @apply text-sm text-moss; }
+      .empty { @apply rounded-xl border border-dashed border-line bg-ivory px-4 py-8 text-center text-sm text-moss; }
+      .notice { @apply rounded-lg border px-3.5 py-2.5 text-sm; }
+      .notice-info { @apply notice border-line bg-sage text-forest; }
+      .notice-warn { @apply notice border-gold/30 bg-gold-soft text-gold-deep; }
+      .notice-danger { @apply notice border-terracotta/25 bg-terracotta-soft text-terracotta; }
+      .notice-ok { @apply notice border-leaf/25 bg-leaf-soft text-leaf; }
+      .stat { @apply card p-5; }
+      .stat-label { @apply text-xs font-semibold uppercase tracking-wider text-moss; }
+      .stat-value { @apply mt-2 font-display text-3xl font-semibold tabular-nums text-forest; }
+      .stat-foot { @apply mt-1 text-xs text-moss; }
+      .bar { @apply h-2.5 flex-1 overflow-hidden rounded-full bg-sage; }
+      .bar > span { @apply block h-full rounded-full bg-forest; }
+      .list-row { @apply flex items-center justify-between gap-3 py-3 text-sm; }
+      .back-link { @apply inline-flex items-center gap-1 text-sm font-medium text-moss transition hover:text-forest; }
+      .dialog { @apply w-full rounded-2xl border border-line bg-white p-0 text-forest shadow-lift; }
+      .icon-btn { @apply inline-flex h-9 w-9 items-center justify-center rounded-lg text-moss transition hover:bg-sage hover:text-forest; }
+    }
+  </style>
+  <title>{{ title }} · RoomCare</title>
+</head>
+<body class="min-h-screen bg-ivory text-forest flex flex-col">
+{{#if currentUser}}{{> nav}}{{/if}}
+<div class="flex-1 flex w-full">
+{{#if currentUser}}{{> sidebar}}{{/if}}
+<div class="flex-1 min-w-0 flex flex-col">
+<main class="flex-1 w-full max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
+{{> flash}}

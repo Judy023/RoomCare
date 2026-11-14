@@ -1,0 +1,57 @@
+<header class="sticky top-0 z-40 border-b border-line bg-white/90 text-forest backdrop-blur supports-[backdrop-filter]:bg-white/80">
+  <div class="flex h-16 items-center gap-3 px-4 sm:px-6">
+    <button type="button" id="sidebar-toggle" class="icon-btn md:hidden" aria-label="Toggle menu" aria-controls="sidebar" aria-expanded="false">
+      <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <a href="/dashboard" class="font-display text-xl font-semibold tracking-tight text-forest">RoomCare</a>
+    <span class="hidden h-5 w-px bg-line lg:block"></span>
+    <span class="hidden text-xs font-medium text-moss lg:block">Housekeeping &amp; Maintenance</span>
+    <div class="flex-1"></div>
+    <a href="/notifications" class="icon-btn relative" title="Notifications" aria-label="Notifications">
+      <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0a3 3 0 1 1-6 0"/></svg>
+      {{#if unreadCount}}<span class="absolute -right-0.5 -top-0.5 min-w-[18px] rounded-full bg-terracotta px-1 text-center text-[10px] font-bold leading-[18px] text-white ring-2 ring-white">{{unreadCount}}</span>{{/if}}
+    </a>
+    <div class="ml-1 flex items-center gap-3 border-l border-line pl-3 sm:pl-4">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sage text-xs font-bold text-forest ring-1 ring-line" aria-hidden="true">{{initials currentUser.name}}</span>
+      <div class="hidden leading-tight sm:block">
+        <div class="text-sm font-semibold">{{currentUser.name}}</div>
+        <div class="text-xs text-moss">{{roleLabel currentUser.role}}{{#if currentUser.staffCode}} · {{currentUser.staffCode}}{{/if}}</div>
+      </div>
+      <a href="/logout" id="logout-link" class="btn-secondary btn-sm ml-1">Logout</a>
+    </div>
+  </div>
+</header>
+
+<dialog id="logout-dialog" class="dialog max-w-sm" aria-labelledby="logout-title">
+  <div class="px-6 pt-6 pb-5">
+    <span class="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-terracotta-soft text-terracotta"><svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l-5-5 5-5M5 12h12"/></svg></span>
+    <h2 id="logout-title" class="font-display text-xl font-semibold">Are you sure you want to logout?</h2>
+    <p class="mt-1 text-sm text-moss">You are signed in as <b class="text-forest">{{currentUser.name}}</b>. You will need to sign in again to continue.</p>
+  </div>
+  <div class="flex justify-end gap-2 rounded-b-2xl border-t border-line bg-ivory px-6 py-4">
+    <button type="button" class="btn-secondary js-logout-cancel" autofocus>Cancel</button>
+    <a href="/logout" class="btn-danger">Log out</a>
+  </div>
+</dialog>
+
+<script>
+  // Ask before logging out (every role uses this nav). Falls back to a plain link if <dialog> is unsupported.
+  (() => {
+    const link = document.getElementById("logout-link");
+    const dialog = document.getElementById("logout-dialog");
+    if (!link || !dialog || typeof dialog.showModal !== "function") return;
+    const lock = (on) => {
+      const gap = window.innerWidth - document.documentElement.clientWidth;
+      document.documentElement.style.overflow = on ? "hidden" : "";
+      document.body.style.paddingRight = on && gap ? gap + "px" : "";
+    };
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      lock(true);
+      dialog.showModal();
+    });
+    dialog.querySelector(".js-logout-cancel").addEventListener("click", () => dialog.close());
+    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener("close", () => lock(false));
+  })();
+</script>

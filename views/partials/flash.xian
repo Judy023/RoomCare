@@ -1,0 +1,12 @@
+{{#each success_msg}}
+<div class="mb-5 flex items-start gap-3 rounded-xl border border-leaf/25 bg-leaf-soft px-4 py-3 text-sm text-leaf shadow-sm" role="status">
+  <svg class="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>
+  <span>{{this}}</span>
+</div>
+{{/each}}
+{{#each error_msg}}
+<div class="mb-5 flex items-start gap-3 rounded-xl border border-terracotta/25 bg-terracotta-soft px-4 py-3 text-sm text-terracotta shadow-sm" role="alert">
+  <svg class="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+  <span>{{this}}</span>
+</div>
+{{/each}}

@@ -1,0 +1,8 @@
+{
+  "name": "RoomCare — Housekeeping & Maintenance",
+  "short_name": "RoomCare",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#FAF9F6",
+  "theme_color": "#233E35"
+}

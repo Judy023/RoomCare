@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300">
+  <rect width="480" height="300" fill="#e2e8f0"/>
+  <rect x="60" y="60" width="360" height="110" rx="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="4"/>
+  <rect x="90" y="130" width="300" height="14" rx="7" fill="#cbd5e1"/>
+  <circle cx="385" cy="90" r="7" fill="#ef4444"/>
+  <path d="M150 200c0 20 14 22 14 40M240 200c0 20 14 22 14 40M330 200c0 20 14 22 14 40" stroke="#f97316" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <text x="240" y="285" font-family="sans-serif" font-size="16" fill="#475569" text-anchor="middle">Sample photo — split-type aircon blowing warm air (Room 305)</text>
+</svg>

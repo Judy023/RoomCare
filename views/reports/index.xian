@@ -1,0 +1,119 @@
+{{> head}}
+<div class="page-header">
+  <div>
+    <p class="eyebrow">Analytics</p>
+    <h1 class="page-title">Reports &amp; KPI Dashboard</h1>
+    <p class="page-sub">Last {{days}} days · room status is live</p>
+  </div>
+  <div class="flex flex-wrap items-center gap-2">
+    <div class="inline-flex rounded-lg border border-line bg-white p-1 shadow-sm">
+      {{#each periods}}<a href="/reports?days={{this}}" class="rounded-md px-3 py-1.5 text-xs font-semibold transition {{#if (eq this @root.days)}}bg-forest text-white{{else}}text-moss hover:bg-sage hover:text-forest{{/if}}">{{this}} days</a>{{/each}}
+    </div>
+    <a href="/reports/work-orders.csv?days={{days}}" class="btn-secondary btn-sm py-2"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg> Work orders CSV</a>
+  </div>
+</div>
+
+<div class="mb-8 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+  <div class="stat"><div class="stat-label">Avg cleaning time</div><div class="stat-value">{{fallback report.tiles.avgCleanMinutes "—"}}<span class="ml-1 font-sans text-sm font-medium text-moss"> min</span></div><div class="stat-foot">{{report.tiles.tasksDone}} of {{report.tiles.tasksCreated}} tasks done</div></div>
+  <div class="stat"><div class="stat-label">Mean time to repair</div><div class="stat-value">{{fallback report.tiles.mttrHours "—"}}<span class="ml-1 font-sans text-sm font-medium text-moss"> h</span></div><div class="stat-foot">SLA met: {{#if (eq report.tiles.slaMet null)}}—{{else}}{{report.tiles.slaMet}}%{{/if}}</div></div>
+  <div class="stat"><div class="stat-label">Open work orders</div><div class="stat-value">{{report.tiles.openWorkOrders}}</div><div class="stat-foot {{#if report.tiles.overdueOpen}}font-semibold !text-terracotta{{/if}}">{{report.tiles.overdueOpen}} overdue</div></div>
+  <div class="stat"><div class="stat-label">Inspection pass rate</div><div class="stat-value">{{#if report.tiles.inspections}}{{report.tiles.passRate}}%{{else}}—{{/if}}</div><div class="stat-foot">{{report.tiles.inspections}} inspections</div></div>
+  <div class="stat"><div class="stat-label">Work orders reported</div><div class="stat-value">{{report.tiles.workOrders}}</div><div class="stat-foot">in this period</div></div>
+  <div class="stat"><div class="stat-label">Parts cost</div><div class="stat-value"><span class="mr-0.5 font-sans text-base font-medium text-moss">₱</span>{{report.tiles.partsCost}}</div><div class="stat-foot">consumed on repairs</div></div>
+  <div class="stat {{#if report.tiles.lowStock}}border-gold/40{{/if}}"><div class="stat-label">Low-stock items</div><div class="stat-value {{#if report.tiles.lowStock}}!text-gold-deep{{/if}}">{{report.tiles.lowStock}}</div><div class="stat-foot">at or below reorder level</div></div>
+</div>
+
+<div class="grid gap-5 lg:grid-cols-2">
+  <section class="card">
+    <h2 class="section-title">Room status (now)</h2>
+    {{#each report.roomStatus}}
+    <div class="mb-3 flex items-center gap-3 text-sm last:mb-0">
+      <span class="w-32 shrink-0 truncate text-moss">{{label key}}</span>
+      <div class="bar"><span style="width: {{pct}}%"></span></div>
+      <span class="w-8 text-right font-semibold tabular-nums">{{value}}</span>
+    </div>
+    {{/each}}
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">Open work orders by priority</h2>
+    {{#each report.openByPriority}}
+    <div class="mb-3 flex items-center gap-3 text-sm last:mb-0">
+      <span class="w-32 shrink-0 truncate text-moss">{{label key}}</span>
+      <div class="bar"><span style="width: {{pct}}%"></span></div>
+      <span class="w-8 text-right font-semibold tabular-nums">{{value}}</span>
+    </div>
+    {{/each}}
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">Work orders by category</h2>
+    {{#each report.woCategory}}
+    <div class="mb-3 flex items-center gap-3 text-sm last:mb-0">
+      <span class="w-32 shrink-0 truncate text-moss">{{key}}</span>
+      <div class="bar"><span style="width: {{pct}}%"></span></div>
+      <span class="w-8 text-right font-semibold tabular-nums">{{value}}</span>
+    </div>
+    {{else}}<p class="empty">No work orders in this period.</p>{{/each}}
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">Work orders by status</h2>
+    {{#each report.woStatus}}
+    <div class="mb-3 flex items-center gap-3 text-sm last:mb-0">
+      <span class="w-32 shrink-0 truncate text-moss">{{label key}}</span>
+      <div class="bar"><span style="width: {{pct}}%"></span></div>
+      <span class="w-8 text-right font-semibold tabular-nums">{{value}}</span>
+    </div>
+    {{/each}}
+  </section>
+
+  <section class="card overflow-x-auto">
+    <h2 class="section-title">Housekeeper productivity</h2>
+    <table class="table">
+      <thead><tr><th>Housekeeper</th><th class="text-right">Assigned</th><th class="text-right">Done</th><th class="text-right">Avg min</th></tr></thead>
+      <tbody>
+        {{#each report.housekeepers}}
+        <tr><td>{{name}}</td><td class="text-right tabular-nums">{{assigned}}</td><td class="text-right tabular-nums">{{done}}</td><td class="text-right tabular-nums">{{fallback avgMinutes "—"}}</td></tr>
+        {{else}}<tr><td colspan="4" class="py-6 text-center text-moss">No tasks in this period.</td></tr>{{/each}}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card overflow-x-auto">
+    <h2 class="section-title">Technician performance</h2>
+    <table class="table">
+      <thead><tr><th>Technician</th><th class="text-right">Assigned</th><th class="text-right">Resolved</th><th class="text-right">Avg h</th><th class="text-right">Overdue</th></tr></thead>
+      <tbody>
+        {{#each report.technicians}}
+        <tr><td>{{name}}</td><td class="text-right tabular-nums">{{assigned}}</td><td class="text-right tabular-nums">{{resolved}}</td><td class="text-right tabular-nums">{{fallback avgHours "—"}}</td><td class="text-right tabular-nums {{#if overdue}}text-terracotta font-semibold{{/if}}">{{overdue}}</td></tr>
+        {{else}}<tr><td colspan="5" class="py-6 text-center text-moss">No assigned work orders in this period.</td></tr>{{/each}}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card overflow-x-auto">
+    <h2 class="section-title">Parts consumed</h2>
+    <table class="table">
+      <thead><tr><th>Part</th><th class="text-right">Qty</th><th class="text-right">Cost (₱)</th></tr></thead>
+      <tbody>
+        {{#each report.parts}}
+        <tr><td>{{name}}</td><td class="text-right tabular-nums">{{qty}} {{unit}}</td><td class="text-right tabular-nums">{{cost}}</td></tr>
+        {{else}}<tr><td colspan="3" class="py-6 text-center text-moss">No parts used in this period.</td></tr>{{/each}}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card overflow-x-auto">
+    <h2 class="section-title">Low stock (reorder now)</h2>
+    <table class="table">
+      <thead><tr><th>Item</th><th class="text-right">In stock</th><th class="text-right">Reorder at</th><th>Supplier</th></tr></thead>
+      <tbody>
+        {{#each report.lowStock}}
+        <tr><td>{{name}}</td><td class="text-right font-semibold text-gold-deep tabular-nums">{{quantity}} {{unit}}</td><td class="text-right tabular-nums">{{reorderLevel}}</td><td>{{fallback supplier "—"}}</td></tr>
+        {{else}}<tr><td colspan="4" class="py-6 text-center text-moss">Stock levels are healthy.</td></tr>{{/each}}
+      </tbody>
+    </table>
+  </section>
+</div>
+{{> footer}}

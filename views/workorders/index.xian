@@ -1,0 +1,65 @@
+{{> head}}
+<div class="page-header">
+  <div>
+    <p class="eyebrow">Maintenance</p>
+    <h1 class="page-title">{{heading}}</h1>
+    {{#if subheading}}<p class="page-sub">{{subheading}}</p>{{/if}}
+  </div>
+  <a href="/work-orders/new" class="btn"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Report issue</a>
+</div>
+
+<form method="GET" action="{{action}}" class="card mb-5 grid gap-3 p-4 sm:grid-cols-4 sm:p-4">
+  <select name="status" class="input">
+    <option value="">{{#if (eq action "/work-orders/my")}}Open & resolved{{else}}All statuses{{/if}}</option>
+    {{#each statuses}}<option value="{{this}}" {{selected this @root.filters.status}}>{{label this}}</option>{{/each}}
+  </select>
+  <select name="priority" class="input">
+    <option value="">All priorities</option>
+    {{#each priorities}}<option value="{{this}}" {{selected this @root.filters.priority}}>{{label this}}</option>{{/each}}
+  </select>
+  <select name="category" class="input">
+    <option value="">All categories</option>
+    {{#each categories}}<option value="{{this}}" {{selected this @root.filters.category}}>{{this}}</option>{{/each}}
+  </select>
+  <div class="flex gap-2"><button class="btn flex-1">Filter</button><a href="{{action}}" class="btn-secondary">Reset</a></div>
+</form>
+
+<div class="card overflow-x-auto p-0">
+  <table class="table">
+    <thead><tr><th>Photo</th><th>Code</th><th>Room</th><th>Issue</th><th>Priority</th><th>Status</th><th>Technician</th><th>Reported</th><th>SLA</th></tr></thead>
+    <tbody>
+      {{#each workOrders}}
+      <tr>
+        <td class="w-20">
+          {{#if photoUrl}}
+          <a href="{{photoUrl}}" class="js-photo group relative block h-14 w-14 overflow-hidden rounded-lg border border-line bg-sage shadow-sm" data-caption="{{code}} · Room {{room.roomNo}} · {{category}}" title="View photo">
+            <img src="{{photoUrl}}" alt="Photo for {{code}}" loading="lazy" class="h-full w-full object-cover transition duration-200 group-hover:scale-105">
+            <span class="absolute inset-0 flex items-center justify-center bg-forest/0 text-white opacity-0 transition group-hover:bg-forest/40 group-hover:opacity-100">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>
+            </span>
+          </a>
+          {{else}}
+          <span class="flex h-14 w-14 items-center justify-center rounded-lg border border-dashed border-line bg-ivory text-moss/40" title="No photo">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M21 16l-5-5-8 8"/></svg>
+          </span>
+          {{/if}}
+        </td>
+        <td class="whitespace-nowrap"><a href="/work-orders/{{id}}" class="link">{{code}}</a></td>
+        <td><a href="/rooms/{{room.id}}" class="link">{{room.roomNo}}</a></td>
+        <td><b>{{category}}</b><div class="text-xs text-moss">{{description}}</div></td>
+        <td>{{priorityBadge priority}}</td>
+        <td>{{badge status}}{{#if holdReason}}<div class="mt-1 text-xs text-gold-deep">{{holdReason}}</div>{{/if}}</td>
+        <td>{{fallback assignedTo.name "—"}}</td>
+        <td class="whitespace-nowrap">{{formatDate reportedAt}}<div class="text-xs text-moss">{{reportedBy.name}}</div></td>
+        <td class="whitespace-nowrap text-xs">
+          {{#if (includes "CLOSED,CANCELLED" status)}}<span class="muted">—</span>
+          {{else if sla.overdue}}<span class="font-semibold text-terracotta">Overdue</span><div class="muted">due {{formatTime sla.dueAt}}</div>
+          {{else}}<span class="font-semibold text-leaf">On track</span><div class="muted">due {{formatDate sla.dueAt}}</div>{{/if}}
+        </td>
+      </tr>
+      {{else}}<tr><td colspan="9" class="py-10 text-center text-moss">No work orders match.</td></tr>{{/each}}
+    </tbody>
+  </table>
+</div>
+{{> photoViewer}}
+{{> footer}}

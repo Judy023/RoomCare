@@ -1,0 +1,106 @@
+{{> head}}
+<div class="page-header">
+  <div>
+    <p class="eyebrow">Overview</p>
+    <h1 class="page-title">Turnover Overview</h1>
+    <p class="page-sub">Good day, {{currentUser.name}}. Here is what needs attention across {{totalRooms}} rooms.</p>
+  </div>
+  <div class="flex gap-2">
+    <a href="/rooms" class="btn-secondary">Room board</a>
+    <a href="/tasks" class="btn">Assign task</a>
+  </div>
+</div>
+
+<div class="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+  {{#each counts}}
+  {{#unless (hiddenStatus status)}}
+  <a href="/rooms?status={{status}}" class="group rounded-2xl border p-4 shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift sm:p-5 {{roomColor status}}">
+    <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wider opacity-90">
+      {{label status}}
+      <svg class="h-4 w-4 opacity-0 transition group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6"/></svg>
+    </div>
+    <div class="mt-2 font-display text-4xl font-semibold tabular-nums">{{count}}</div>
+  </a>
+  {{/unless}}
+  {{/each}}
+</div>
+
+<div class="grid gap-5 lg:grid-cols-2">
+  <section class="card">
+    <h2 class="section-title"><span class="flex h-6 w-6 items-center justify-center rounded-full bg-forest text-[11px] font-bold text-white">1</span> Rooms waiting for a cleaning task <span class="count">{{needTask.length}}</span></h2>
+    {{#if needTask.length}}
+    <ul class="divide-y divide-line">
+      {{#each needTask}}
+      <li class="list-row">
+        <span><b>Room {{roomNo}}</b> <span class="text-moss">· {{type}} · Floor {{floor}}</span></span>
+        <a href="/tasks?roomId={{id}}" class="btn btn-sm">Assign</a>
+      </li>
+      {{/each}}
+    </ul>
+    {{else}}<p class="empty">Every vacant dirty room has a housekeeper assigned.</p>{{/if}}
+  </section>
+
+  <section class="card">
+    <h2 class="section-title"><span class="flex h-6 w-6 items-center justify-center rounded-full bg-forest text-[11px] font-bold text-white">2</span> Issues waiting for a technician <span class="count">{{openWos.length}}</span></h2>
+    {{#if openWos.length}}
+    <ul class="divide-y divide-line">
+      {{#each openWos}}
+      <li class="list-row">
+        <span class="flex flex-wrap items-center gap-1.5"><a href="/work-orders/{{id}}" class="link">{{code}}</a> <span class="text-moss">Room {{room.roomNo}} · {{category}}</span> {{priorityBadge priority}}
+          {{#if sla.overdue}}<span class="text-xs font-semibold text-terracotta">Overdue</span>{{/if}}</span>
+        <a href="/work-orders/{{id}}" class="btn btn-sm">Review</a>
+      </li>
+      {{/each}}
+    </ul>
+    {{else}}<p class="empty">No unassigned work orders.</p>{{/if}}
+    {{#if onHold.length}}
+    <div class="mt-5 rounded-xl border border-dashed border-gold/40 bg-gold-soft/50 p-4">
+      <h3 class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gold-deep">On hold · {{onHold.length}}</h3>
+      <ul class="space-y-1.5 text-sm">
+        {{#each onHold}}<li><a href="/work-orders/{{id}}" class="link">{{code}}</a> Room {{room.roomNo}} — {{holdReason}} <span class="text-moss">({{assignedTo.name}})</span></li>{{/each}}
+      </ul>
+    </div>
+    {{/if}}
+  </section>
+
+  <section class="card">
+    <h2 class="section-title"><span class="flex h-6 w-6 items-center justify-center rounded-full bg-forest text-[11px] font-bold text-white">3</span> Rooms ready for inspection <span class="count">{{toInspect.length}}</span></h2>
+    {{#if toInspect.length}}
+    <ul class="divide-y divide-line">
+      {{#each toInspect}}
+      <li class="list-row">
+        <span class="flex flex-wrap items-center gap-1.5"><b>Room {{roomNo}}</b> {{badge status}} {{#if workOrders.length}}<span class="text-moss">· {{workOrders.length}} repair(s) resolved</span>{{/if}}</span>
+        <a href="/inspections/new?roomId={{id}}" class="btn btn-sm">Inspect</a>
+      </li>
+      {{/each}}
+    </ul>
+    {{else}}<p class="empty">Nothing waiting for inspection.</p>{{/if}}
+  </section>
+
+  <section class="card">
+    <h2 class="section-title"><span class="flex h-6 w-6 items-center justify-center rounded-full bg-sage text-steel"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/></svg></span> Cleaning in progress <span class="count">{{inProgress.length}}</span></h2>
+    {{#if inProgress.length}}
+    <ul class="divide-y divide-line">
+      {{#each inProgress}}
+      <li class="list-row">
+        <span><b>Room {{room.roomNo}}</b> · {{title}} <span class="text-moss">· {{housekeeper.name}}</span></span>
+        <span class="shrink-0 text-xs text-moss">started {{timeAgo startedAt}}</span>
+      </li>
+      {{/each}}
+    </ul>
+    {{else}}<p class="empty">No rooms are being cleaned right now.</p>{{/if}}
+  </section>
+
+  {{#if lowStock.length}}
+  <section class="card border-gold/40 lg:col-span-2">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="section-title text-gold-deep"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> Low stock <span class="count bg-gold-soft text-gold-deep">{{lowStock.length}}</span></h2>
+      <a href="/inventory" class="mb-4 text-xs font-semibold text-gold hover:text-gold-deep">View inventory →</a>
+    </div>
+    <div class="flex flex-wrap gap-2 text-sm">
+      {{#each lowStock}}<span class="rounded-lg border border-gold/30 bg-gold-soft px-3 py-1.5 text-forest">{{name}}: <b class="text-gold-deep">{{quantity}}</b> {{unit}} <span class="text-moss">(reorder at {{reorderLevel}})</span></span>{{/each}}
+    </div>
+  </section>
+  {{/if}}
+</div>
+{{> footer}}

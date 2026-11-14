@@ -1,0 +1,93 @@
+{{> head}}
+<div class="page-header">
+  <div>
+    <p class="eyebrow">Housekeeping</p>
+    <h1 class="page-title">Cleaning Tasks</h1>
+    <p class="page-sub">Assign rooms to housekeepers and follow every task to done.</p>
+  </div>
+</div>
+
+<div class="grid gap-5 lg:grid-cols-3">
+  <form method="POST" action="/tasks" class="card space-y-4 self-start lg:sticky lg:top-24 lg:col-span-1">
+    <h2 class="section-title">Assign a cleaning task</h2>
+    <div>
+      <label class="label" for="roomId">Room</label>
+      <select id="roomId" name="roomId" class="input" required>
+        <option value="">Select a room…</option>
+        {{#each rooms}}<option value="{{id}}" {{selected id @root.selectedRoomId}}>{{roomNo}} — {{type}}{{#unless (hiddenStatus status)}} ({{label status}}){{/unless}}</option>{{/each}}
+      </select>
+    </div>
+    <div>
+      <label class="label" for="housekeeperId">Housekeeper</label>
+      <select id="housekeeperId" name="housekeeperId" class="input" required>
+        <option value="">Select a housekeeper…</option>
+        {{#each housekeepers}}<option value="{{id}}">{{name}}{{#if staffCode}} ({{staffCode}}){{/if}}{{#if floor}} · floor {{floor}}{{/if}}{{#if shift}} · {{shift}}{{/if}}</option>{{/each}}
+      </select>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="label" for="taskType">Task type</label>
+        <select id="taskType" name="taskType" class="input">
+          {{#each taskTypes}}<option value="{{value}}">{{this.label}}</option>{{/each}}
+        </select>
+      </div>
+      <div>
+        <label class="label" for="priority">Priority</label>
+        <select id="priority" name="priority" class="input">
+          {{#each priorities}}<option value="{{this}}" {{selected this "MEDIUM"}}>{{label this}}</option>{{/each}}
+        </select>
+      </div>
+    </div>
+    <div>
+      <label class="label" for="dueAt">Due by (optional)</label>
+      <input id="dueAt" type="datetime-local" name="dueAt" class="input">
+    </div>
+    <div>
+      <label class="label" for="notes">Notes for the housekeeper</label>
+      <textarea id="notes" name="notes" rows="2" class="input" placeholder="e.g. VIP arrival at 14:00, extra pillows"></textarea>
+    </div>
+    <button class="btn w-full">Assign &amp; notify</button>
+  </form>
+
+  <div class="space-y-5 lg:col-span-2">
+    <section class="card">
+      <h2 class="section-title">Vacant dirty, not yet assigned <span class="count">{{needCleaning.length}}</span></h2>
+      {{#if needCleaning.length}}
+      <div class="flex flex-wrap gap-2">
+        {{#each needCleaning}}
+        <a href="/tasks?roomId={{id}}" class="rounded-lg border border-terracotta/25 bg-terracotta-soft px-3 py-1.5 text-sm text-terracotta transition hover:border-terracotta/50 hover:shadow-soft">Room <b>{{roomNo}}</b> <span class="text-xs">· F{{floor}}</span></a>
+        {{/each}}
+      </div>
+      {{else}}<p class="empty">All caught up.</p>{{/if}}
+    </section>
+
+    <section class="card overflow-x-auto p-0">
+      <div class="flex flex-wrap items-center justify-between gap-2 px-5 pt-5 pb-4 sm:px-6">
+        <h2 class="section-title mb-0">Tasks</h2>
+        <form method="GET" class="flex gap-2">
+          <select name="status" class="input w-auto py-1.5" onchange="this.form.submit()">
+            <option value="">All statuses</option>
+            {{#each statuses}}<option value="{{this}}" {{selected this @root.status}}>{{label this}}</option>{{/each}}
+          </select>
+        </form>
+      </div>
+      <table class="table">
+        <thead><tr><th>Code</th><th>Room</th><th>Task</th><th>Housekeeper</th><th>Status</th><th>Assigned</th><th>Time taken</th></tr></thead>
+        <tbody>
+          {{#each tasks}}
+          <tr>
+            <td class="whitespace-nowrap font-mono text-xs text-moss">{{code}}</td>
+            <td><a href="/rooms/{{room.id}}" class="link">{{room.roomNo}}</a></td>
+            <td>{{title}} {{priorityBadge priority}}{{#if notes}}<div class="mt-0.5 text-xs text-moss">{{nl2br notes}}</div>{{/if}}</td>
+            <td>{{housekeeper.name}}</td>
+            <td>{{badge status}}</td>
+            <td class="whitespace-nowrap">{{formatDate createdAt}}<div class="text-xs text-moss">by {{supervisor.name}}</div></td>
+            <td class="whitespace-nowrap">{{minutesBetween startedAt completedAt}}</td>
+          </tr>
+          {{else}}<tr><td colspan="7" class="py-10 text-center text-moss">No tasks.</td></tr>{{/each}}
+        </tbody>
+      </table>
+    </section>
+  </div>
+</div>
+{{> footer}}

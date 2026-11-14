@@ -1,0 +1,59 @@
+{{> head}}
+<div class="mx-auto max-w-2xl">
+  <a href="/inspections" class="back-link">← Inspections</a>
+  <div class="mb-6 mt-3">
+    <h1 class="page-title flex flex-wrap items-center gap-3">Inspect Room {{room.roomNo}} {{badge room.status}}</h1>
+    <p class="page-sub">{{room.type}} · Floor {{room.floor}}</p>
+  </div>
+
+  {{#unless state.ok}}
+  <div class="notice-warn px-5 py-4">{{state.reason}}</div>
+  {{else}}
+  <div class="card mb-5 space-y-2 text-sm">
+    {{#if lastTask}}
+    <p>🧹 <b>{{lastTask.title}}</b> ({{lastTask.code}}) by {{lastTask.housekeeper.name}}, done {{formatDate lastTask.completedAt}}</p>
+    {{else}}
+    <p class="muted">No completed cleaning task on record for this room.</p>
+    {{/if}}
+    {{#each resolvedWos}}
+    <p>🔧 <a href="/work-orders/{{id}}" class="link">{{code}}</a> {{category}}: {{description}} — resolved by {{assignedTo.name}}{{#if resolutionNotes}} <span class="muted">({{resolutionNotes}})</span>{{/if}}</p>
+    {{/each}}
+  </div>
+
+  <form method="POST" action="/inspections" class="card space-y-5">
+    <input type="hidden" name="roomId" value="{{room.id}}">
+    <fieldset>
+      <legend class="section-title">Checklist <span class="font-normal muted">— tick every item that passes</span></legend>
+      <div class="space-y-2">
+        {{#each checklist}}
+        <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-line px-4 py-3.5 transition hover:border-moss/30 hover:bg-ivory has-[:checked]:border-leaf/30 has-[:checked]:bg-leaf-soft">
+          <input type="checkbox" name="items" value="{{key}}" class="h-5 w-5 accent-forest js-item">
+          <span class="flex-1 text-sm">{{this.label}}</span>
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-moss/70">{{kind}}</span>
+        </label>
+        {{/each}}
+      </div>
+    </fieldset>
+    <div>
+      <label class="label" for="remarks">Remarks</label>
+      <textarea id="remarks" name="remarks" rows="2" class="input" placeholder="What needs fixing if it failed"></textarea>
+    </div>
+    <div id="verdict" class="notice-danger">Result: <b>FAIL</b> — unticked items send the room back.</div>
+    <button class="btn w-full py-3">Record inspection</button>
+  </form>
+  {{/unless}}
+</div>
+<script>
+  const boxes = [...document.querySelectorAll(".js-item")];
+  const verdict = document.getElementById("verdict");
+  const update = () => {
+    if (!verdict) return;
+    const pass = boxes.every((b) => b.checked);
+    verdict.className = pass ? "notice-ok" : "notice-danger";
+    verdict.innerHTML = pass
+      ? "Result: <b>PASS</b> — the room will be set to Inspected, and repairs closed."
+      : "Result: <b>FAIL</b> — unticked items send the room back.";
+  };
+  boxes.forEach((b) => b.addEventListener("change", update));
+</script>
+{{> footer}}

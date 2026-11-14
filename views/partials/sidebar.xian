@@ -1,0 +1,35 @@
+<div id="sidebar-backdrop" class="fixed inset-0 top-16 z-20 hidden bg-forest/30 backdrop-blur-[1px] md:hidden"></div>
+<aside id="sidebar" class="fixed bottom-0 left-0 top-16 z-30 flex w-64 shrink-0 -translate-x-full flex-col overflow-y-auto border-r border-line bg-white transition-transform duration-200 md:sticky md:top-16 md:h-[calc(100vh-4rem)] md:translate-x-0">
+  <nav aria-label="Main" class="flex-1 px-3 py-5">
+    <p class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-gold">Menu</p>
+    <ul class="space-y-0.5 text-sm">
+      {{#each navLinks}}
+      <li>
+        <a href="{{href}}" {{#if active}}aria-current="page"{{/if}} class="group relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition {{#if active}}bg-sage font-semibold text-forest{{else}}font-medium text-moss hover:bg-ivory hover:text-forest{{/if}}">
+          {{#if active}}<span class="absolute inset-y-2 -left-3 w-1 rounded-r-full bg-gold" aria-hidden="true"></span>{{/if}}
+          <span class="{{#if active}}text-forest{{else}}text-moss/70 group-hover:text-forest{{/if}}">{{navIcon href}}</span>
+          {{this.label}}
+        </a>
+      </li>
+      {{/each}}
+    </ul>
+  </nav>
+  <div class="border-t border-line px-6 py-4 text-[11px] leading-relaxed text-moss/80">
+    Signed in as <span class="font-semibold text-moss">{{roleLabel currentUser.role}}</span>
+  </div>
+</aside>
+<script>
+  (function () {
+    var btn = document.getElementById("sidebar-toggle");
+    var bar = document.getElementById("sidebar");
+    var bg = document.getElementById("sidebar-backdrop");
+    if (!btn || !bar) return;
+    function set(open) {
+      bar.classList.toggle("-translate-x-full", !open);
+      bg.classList.toggle("hidden", !open);
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    btn.addEventListener("click", function () { set(bar.classList.contains("-translate-x-full")); });
+    bg.addEventListener("click", function () { set(false); });
+  })();
+</script>

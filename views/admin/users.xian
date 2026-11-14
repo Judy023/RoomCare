@@ -1,0 +1,162 @@
+{{> head}}
+<div class="page-header">
+  <div>
+    <p class="eyebrow">Administration</p>
+    <h1 class="page-title">Manage Users</h1>
+    <p class="page-sub">Edit staff details, activate accounts and reset passwords.</p>
+  </div>
+  <button type="button" id="open-add-user" class="btn"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Add user</button>
+</div>
+
+<dialog id="add-user" class="dialog max-w-2xl">
+  <form method="POST" action="/admin/users" class="flex max-h-[85vh] flex-col">
+    <div class="flex items-start justify-between gap-3 border-b border-line px-6 py-5">
+      <div>
+        <h2 class="font-display text-xl font-semibold">Add a staff account</h2>
+        <p class="mt-0.5 text-sm text-moss">They can sign in right away with the temporary password.</p>
+      </div>
+      <button type="button" class="js-close-add-user icon-btn text-xl leading-none" aria-label="Close">×</button>
+    </div>
+
+    <div class="grid gap-4 overflow-y-auto overscroll-contain px-6 py-5 sm:grid-cols-2">
+      <div><label class="label" for="nu-name">Full name</label><input id="nu-name" name="name" class="input" autocomplete="off" required></div>
+      <div><label class="label" for="nu-email">Email</label><input id="nu-email" type="email" name="email" class="input" autocomplete="off" required></div>
+      <div><label class="label" for="nu-password">Temporary password</label><input id="nu-password" type="password" name="password" class="input" minlength="8" autocomplete="new-password" required data-reveal></div>
+      <div><label class="label" for="nu-role">Role</label>
+        <select id="nu-role" name="role" class="input">{{#each roles}}<option value="{{this}}">{{roleLabel this}}</option>{{/each}}</select>
+      </div>
+      <div><label class="label" for="nu-staffCode">Staff code</label><input id="nu-staffCode" name="staffCode" class="input" autocomplete="off" placeholder="HK-024"></div>
+      <div><label class="label" for="nu-phone">Mobile (for SMS)</label><input id="nu-phone" name="phone" class="input" autocomplete="off" placeholder="+63 9xx xxx xxxx"></div>
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="label" for="nu-shift">Shift</label><select id="nu-shift" name="shift" class="input"><option value="">—</option><option>AM</option><option>PM</option><option>NIGHT</option></select></div>
+        <div><label class="label" for="nu-floor">Floor</label><input id="nu-floor" type="number" name="floor" min="0" class="input"></div>
+      </div>
+      <div><label class="label" for="nu-specialty">Specialty (technicians)</label><input id="nu-specialty" name="specialty" class="input" autocomplete="off" placeholder="HVAC, Plumbing…"></div>
+    </div>
+
+    <div class="flex justify-end gap-2 rounded-b-2xl border-t border-line bg-ivory px-6 py-4">
+      <button type="button" class="btn-ghost-danger js-close-add-user">Cancel</button>
+      <button class="btn">Create account</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="mb-4 flex flex-wrap items-center gap-3">
+  <div class="relative min-w-[240px] flex-1 sm:max-w-md">
+    <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-moss/60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input type="search" id="user-search" class="input pl-9" placeholder="Search name, email, staff code, role…" autocomplete="off" aria-label="Search users">
+  </div>
+  <div class="inline-flex rounded-lg border border-line bg-white p-1 shadow-sm" role="group" aria-label="Filter by status">
+    <button type="button" data-filter="all" class="js-user-filter rounded-md px-3 py-1.5 text-xs font-semibold transition">All</button>
+    <button type="button" data-filter="1" class="js-user-filter rounded-md px-3 py-1.5 text-xs font-semibold transition">Active</button>
+    <button type="button" data-filter="0" class="js-user-filter rounded-md px-3 py-1.5 text-xs font-semibold transition">Inactive</button>
+  </div>
+  <p id="user-count" class="text-sm text-moss" aria-live="polite"></p>
+</div>
+
+<div class="card overflow-x-auto p-0">
+  <table class="table">
+    <thead><tr><th>Name</th><th>Role</th><th>Staff code</th><th>Mobile</th><th>Shift / floor</th><th>Specialty</th><th>Active</th><th>Reset password</th><th></th></tr></thead>
+    <tbody>
+      {{#each users}}
+      <tr class="js-user-row {{#unless active}}opacity-60{{/unless}}" data-active="{{#if active}}1{{else}}0{{/if}}" data-search="{{name}} {{email}} {{staffCode}} {{roleLabel role}} {{phone}} {{specialty}}">
+        <td><form id="u{{id}}" method="POST" action="/admin/users/{{id}}"></form><div class="flex items-center gap-3"><span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sage text-xs font-bold text-forest ring-1 ring-line">{{initials name}}</span><div><b>{{name}}</b>{{#unless active}} <span class="ml-1 rounded-full border border-gold/30 bg-gold-soft px-2 py-0.5 text-[11px] font-semibold text-gold-deep">Inactive</span>{{/unless}}<div class="text-xs text-moss">{{email}}</div></div></div></td>
+        <td><select form="u{{id}}" name="role" class="input min-w-[150px] py-1">{{#each @root.roles}}<option value="{{this}}" {{selected this ../role}}>{{roleLabel this}}</option>{{/each}}</select></td>
+        <td><input form="u{{id}}" name="staffCode" value="{{staffCode}}" autocomplete="off" class="input w-24 py-1"></td>
+        <td><input form="u{{id}}" name="phone" value="{{phone}}" autocomplete="off" class="input w-36 py-1"></td>
+        <td class="whitespace-nowrap">
+          <select form="u{{id}}" name="shift" class="input inline-block w-20 py-1"><option value="">—</option>{{#each (split "AM,PM,NIGHT")}}<option {{selected this ../shift}}>{{this}}</option>{{/each}}</select>
+          <input form="u{{id}}" type="number" name="floor" value="{{floor}}" min="0" class="input inline-block w-16 py-1">
+        </td>
+        <td><input form="u{{id}}" name="specialty" value="{{specialty}}" autocomplete="off" class="input w-28 py-1"></td>
+        <td class="text-center"><input form="u{{id}}" type="checkbox" name="active" {{checked active}} class="h-4 w-4 accent-forest"></td>
+        <td class="whitespace-nowrap">
+          {{!-- Disabled until "Reset" is clicked, so the browser cannot autofill it and Save never touches the password by accident. --}}
+          <input form="u{{id}}" type="hidden" name="resetPassword" value="1" disabled class="js-reset-flag">
+          <input form="u{{id}}" type="password" name="password" placeholder="New password" minlength="8" autocomplete="new-password" disabled class="js-reset-input input hidden w-32 py-1">
+          <button type="button" class="js-reset-toggle btn-secondary btn-sm">Reset</button>
+        </td>
+        <td><button form="u{{id}}" class="btn btn-sm">Save</button></td>
+      </tr>
+      {{/each}}
+      <tr id="user-empty" class="hidden"><td colspan="9" class="py-10 text-center text-moss">No users match your search.</td></tr>
+    </tbody>
+  </table>
+</div>
+<script>
+  // Search + Active/Inactive filter (client-side; the full list is already on the page).
+  (() => {
+    const input = document.getElementById("user-search");
+    const rows = [...document.querySelectorAll(".js-user-row")];
+    const buttons = [...document.querySelectorAll(".js-user-filter")];
+    const empty = document.getElementById("user-empty");
+    const count = document.getElementById("user-count");
+    let status = "all";
+    const apply = () => {
+      const terms = input.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+      let shown = 0;
+      rows.forEach((row) => {
+        const text = row.dataset.search.toLowerCase();
+        const match = terms.every((t) => text.includes(t)) && (status === "all" || row.dataset.active === status);
+        row.classList.toggle("hidden", !match);
+        if (match) shown++;
+      });
+      empty.classList.toggle("hidden", shown > 0);
+      count.textContent = shown === rows.length ? `${rows.length} users` : `${shown} of ${rows.length} users`;
+      buttons.forEach((b) => {
+        const on = b.dataset.filter === status;
+        b.classList.toggle("bg-forest", on);
+        b.classList.toggle("text-white", on);
+        b.classList.toggle("text-moss", !on);
+        b.classList.toggle("hover:bg-sage", !on);
+        b.setAttribute("aria-pressed", String(on));
+      });
+    };
+    input.addEventListener("input", apply);
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") e.preventDefault(); });
+    buttons.forEach((b) => b.addEventListener("click", () => { status = b.dataset.filter; apply(); }));
+    apply();
+  })();
+
+  document.querySelectorAll(".js-reset-toggle").forEach((btn) => {
+    const cell = btn.closest("td");
+    const input = cell.querySelector(".js-reset-input");
+    const flag = cell.querySelector(".js-reset-flag");
+    btn.addEventListener("click", () => {
+      const on = input.disabled;
+      input.disabled = flag.disabled = !on;
+      input.required = on;
+      input.value = "";
+      input.classList.toggle("hidden", !on);
+      btn.textContent = on ? "Cancel" : "Reset";
+      if (on) input.focus();
+    });
+  });
+
+  // "Add user" modal: the page behind it is locked; only the modal scrolls.
+  (() => {
+    const dialog = document.getElementById("add-user");
+    const form = dialog.querySelector("form");
+    const lock = (on) => {
+      const gap = window.innerWidth - document.documentElement.clientWidth;
+      document.documentElement.style.overflow = on ? "hidden" : "";
+      document.body.style.paddingRight = on && gap ? gap + "px" : "";
+    };
+    document.getElementById("open-add-user").addEventListener("click", () => {
+      lock(true);
+      dialog.showModal();
+      dialog.querySelector("#nu-name").focus();
+    });
+    dialog.querySelectorAll(".js-close-add-user").forEach((b) => b.addEventListener("click", () => dialog.close()));
+    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener("close", () => {
+      form.reset();
+      // Hide the password again (via the eye button so its icon stays in sync).
+      const pw = form.querySelector("#nu-password");
+      if (pw.type === "text") pw.parentNode.querySelector("button")?.click();
+      lock(false);
+    });
+  })();
+</script>
+{{> passwordToggle}}
+{{> footer}}

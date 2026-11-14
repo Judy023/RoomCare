@@ -1,0 +1,40 @@
+{{> head}}
+<div class="mx-auto max-w-xl sm:mt-4">
+  <div class="mb-6 text-center">
+    <p class="eyebrow">RoomCare</p>
+    <h1 class="font-display text-3xl font-semibold tracking-tight">Create an account</h1>
+    <p class="mt-1.5 muted">A System Admin approves new accounts before you can sign in.</p>
+  </div>
+  <form method="POST" action="/register" class="card grid gap-5 sm:grid-cols-2 sm:p-8">
+    <div class="sm:col-span-2">
+      <label class="label" for="name">Full name</label>
+      <input id="name" name="name" placeholder="Enter your full name" class="input" required autofocus autocomplete="name">
+    </div>
+    <div class="sm:col-span-2">
+      <label class="label" for="email">Email</label>
+      <input id="email" type="email" name="email" placeholder="Enter your email" class="input" required autocomplete="email">
+    </div>
+    <div>
+      <label class="label" for="role">Role</label>
+      <select id="role" name="role" class="input" required>
+        {{#each roles}}<option value="{{this}}">{{roleLabel this}}</option>{{/each}}
+      </select>
+    </div>
+    <div>
+      <label class="label" for="phone">Mobile (optional, for SMS)</label>
+      <input id="phone" type="tel" name="phone" class="input" placeholder="+63 9xx xxx xxxx" autocomplete="tel">
+    </div>
+    <div>
+      <label class="label" for="password">Password</label>
+      <input id="password" type="password" name="password" placeholder="Enter your password" class="input" minlength="8" required autocomplete="new-password" data-reveal>
+    </div>
+    <div>
+      <label class="label" for="confirmPassword">Confirm password</label>
+      <input id="confirmPassword" type="password" name="confirmPassword" placeholder="Re-enter your password" class="input" minlength="8" required autocomplete="new-password" data-reveal>
+    </div>
+    <button type="submit" class="btn w-full py-3 sm:col-span-2">Create account</button>
+    <p class="border-t border-line pt-5 text-center text-sm text-moss sm:col-span-2">Already have an account? <a href="/login" class="link">Sign in</a></p>
+  </form>
+</div>
+{{> passwordToggle}}
+{{> footer}}

@@ -1,0 +1,44 @@
+{{> head}}
+<section class="relative overflow-hidden rounded-3xl border border-line bg-white shadow-soft">
+  <div class="grid lg:grid-cols-2">
+    <div class="px-6 py-12 sm:px-10 sm:py-16 lg:py-20">
+      <p class="eyebrow">Housekeeping &amp; Hotel Maintenance</p>
+      <h1 class="font-display text-4xl font-semibold leading-[1.1] tracking-tight text-forest sm:text-5xl">Every room, ready for the next guest.</h1>
+      <p class="mt-5 max-w-lg text-base leading-relaxed text-moss">Turn rooms around from check-out to the next arrival: assign cleaning, track room status live,
+        report and repair faults with photos, log parts, inspect and release rooms, and watch the KPIs.</p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a href="/login" class="btn btn-lg">Sign in</a>
+        <a href="/register" class="btn-secondary btn-lg">Create an account</a>
+      </div>
+    </div>
+    <div class="relative hidden min-h-[320px] lg:block">
+      <img src="/img/hotel-room.jpg" alt="A freshly made hotel room" class="absolute inset-0 h-full w-full object-cover">
+      <div class="absolute inset-0 bg-gradient-to-r from-white via-white/10 to-transparent"></div>
+    </div>
+  </div>
+</section>
+
+<section class="mt-8 grid gap-4 sm:grid-cols-3">
+  <div class="card">
+    <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-sage text-forest">
+      <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+    </span>
+    <h2 class="font-semibold">Housekeeping</h2>
+    <p class="mt-1.5 muted leading-relaxed">Supervisors assign cleaning tasks; housekeepers start and finish them from their phone.</p>
+  </div>
+  <div class="card">
+    <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gold-soft text-gold-deep">
+      <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>
+    </span>
+    <h2 class="font-semibold">Maintenance</h2>
+    <p class="mt-1.5 muted leading-relaxed">Issues become work orders with photos, SLA tracking, technician SMS and parts usage.</p>
+  </div>
+  <div class="card">
+    <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-leaf-soft text-leaf">
+      <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+    </span>
+    <h2 class="font-semibold">Inspection &amp; KPIs</h2>
+    <p class="mt-1.5 muted leading-relaxed">Inspect and release rooms, and report on turnover and repair times.</p>
+  </div>
+</section>
+{{> footer}}

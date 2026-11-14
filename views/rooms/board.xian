@@ -1,0 +1,54 @@
+{{> head}}
+<div class="page-header mb-5">
+  <div>
+    <p class="eyebrow">Live</p>
+    <h1 class="page-title">Room Status Board</h1>
+    <p class="page-sub flex items-center gap-2"><span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-leaf/50"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-leaf"></span></span>{{board.shown}} rooms · refreshed {{formatTime now}} · auto-refreshes every minute</p>
+  </div>
+</div>
+<div class="mb-7 flex flex-wrap gap-2 text-xs">
+    <a href="/rooms" class="rounded-full border px-3.5 py-1.5 font-semibold transition {{#if status}}border-line bg-white text-moss hover:bg-sage{{else}}border-forest bg-forest text-white{{/if}}">All</a>
+    {{#each board.counts}}
+    {{#unless (hiddenStatus status)}}
+    <a href="/rooms?status={{status}}" class="rounded-full border px-3.5 py-1.5 font-semibold transition hover:shadow-soft {{roomColor status}} {{#if (eq status @root.status)}}ring-2 ring-forest ring-offset-2 ring-offset-ivory{{/if}}">{{label status}} <span class="ml-1 rounded-full bg-white/70 px-1.5 tabular-nums">{{count}}</span></a>
+    {{/unless}}
+    {{/each}}
+</div>
+
+{{#each board.floors}}
+<section class="mb-8">
+  <h2 class="mb-3 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-moss">Floor {{floor}}<span class="h-px flex-1 bg-line"></span></h2>
+  <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+    {{#each rooms}}
+    <div class="flex flex-col rounded-2xl border p-4 shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift {{roomColor status}}">
+      <a href="/rooms/{{id}}" class="block flex-1">
+        <div class="flex items-start justify-between">
+          <span class="font-display text-2xl font-semibold leading-none">{{roomNo}}</span>
+          {{#if workOrders.length}}<span class="rounded-full bg-white/70 px-1.5 py-0.5 text-[11px] font-semibold" title="Work orders">🔧 {{workOrders.length}}</span>{{/if}}
+        </div>
+        <div class="mt-1 text-xs opacity-80">{{type}}</div>
+        <div class="mt-2 text-[11px] font-semibold uppercase tracking-wider">{{label status}}</div>
+        {{#each tasks}}<div class="mt-1 text-[11px]">🧹 {{housekeeper.name}} · {{label status}}</div>{{/each}}
+        {{#each workOrders}}<div class="mt-0.5 text-[11px]">{{code}} · {{label status}}</div>{{/each}}
+      </a>
+      {{#if @root.canCheckInOut}}
+        {{#if (eq status "OCCUPIED")}}
+        <form method="POST" action="/rooms/{{id}}/checkout" class="mt-2" onsubmit="return confirm('Check out the guest in room {{roomNo}}?')">
+          <button class="btn-secondary btn-sm w-full">Check out</button>
+        </form>
+        {{/if}}
+        {{#if (eq status "INSPECTED")}}
+        <form method="POST" action="/rooms/{{id}}/checkin" class="mt-2">
+          <button class="btn btn-sm w-full">Assign guest</button>
+        </form>
+        {{/if}}
+      {{/if}}
+    </div>
+    {{/each}}
+  </div>
+</section>
+{{else}}
+<div class="empty">No rooms match this filter.</div>
+{{/each}}
+<script>setTimeout(() => location.reload(), 60000);</script>
+{{> footer}}

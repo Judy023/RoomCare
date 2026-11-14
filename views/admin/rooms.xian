@@ -1,0 +1,41 @@
+{{> head}}
+<div class="page-header">
+  <div>
+    <p class="eyebrow">Administration</p>
+    <h1 class="page-title">Manage Rooms</h1>
+    <p class="page-sub">Add rooms, edit their details or override their status.</p>
+  </div>
+</div>
+
+<form method="POST" action="/admin/rooms" class="card mb-6 grid gap-4 sm:grid-cols-5">
+  <h2 class="section-title mb-0 sm:col-span-5">Add a room</h2>
+  <div><label class="label">Room no.</label><input name="roomNo" class="input" required placeholder="409"></div>
+  <div><label class="label">Type</label><select name="type" class="input">{{#each types}}<option>{{this}}</option>{{/each}}</select></div>
+  <div><label class="label">Floor</label><input type="number" name="floor" min="0" class="input" required></div>
+  <div><label class="label">Initial status</label><select name="status" class="input">{{#each statuses}}<option value="{{this}}">{{label this}}</option>{{/each}}</select></div>
+  <div class="flex items-end"><button class="btn w-full">Add room</button></div>
+</form>
+
+<div class="card overflow-x-auto p-0">
+  <table class="table">
+    <thead><tr><th>Room</th><th>Type</th><th>Floor</th><th>Status (override)</th><th>Notes</th><th></th></tr></thead>
+    <tbody>
+      {{#each rooms}}
+      <tr>
+        <td><form id="r{{id}}" method="POST" action="/admin/rooms/{{id}}"></form><a href="/rooms/{{id}}" class="font-display text-lg font-semibold text-forest hover:text-pine">{{roomNo}}</a></td>
+        <td><select form="r{{id}}" name="type" class="input py-1">{{#each @root.types}}<option {{selected this ../type}}>{{this}}</option>{{/each}}</select></td>
+        <td><input form="r{{id}}" type="number" name="floor" value="{{floor}}" min="0" class="input w-20 py-1"></td>
+        <td><select form="r{{id}}" name="status" class="input py-1">{{#each @root.statuses}}<option value="{{this}}" {{selected this ../status}}>{{label this}}</option>{{/each}}</select></td>
+        <td><input form="r{{id}}" name="notes" value="{{notes}}" class="input py-1" placeholder="e.g. connecting room"></td>
+        <td class="whitespace-nowrap">
+          <div class="flex gap-1.5">
+          <button form="r{{id}}" class="btn btn-sm">Save</button>
+          <form method="POST" action="/admin/rooms/{{id}}/delete" class="inline" onsubmit="return confirm('Delete room {{roomNo}}?')"><button class="btn-ghost-danger btn-sm">Delete</button></form>
+          </div>
+        </td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
+{{> footer}}

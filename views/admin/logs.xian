@@ -1,0 +1,24 @@
+{{> head}}
+<div class="page-header">
+  <div>
+    <p class="eyebrow">Administration</p>
+    <h1 class="page-title">System Logs</h1>
+    <p class="page-sub">The latest 300 actions recorded by RoomCare.</p>
+  </div>
+</div>
+<div class="card overflow-x-auto p-0">
+  <table class="table">
+    <thead><tr><th>When</th><th>User</th><th>Action</th><th>Details</th></tr></thead>
+    <tbody>
+      {{#each logs}}
+      <tr>
+        <td class="whitespace-nowrap text-moss tabular-nums">{{formatDate createdAt}}</td>
+        <td class="whitespace-nowrap">{{#if user}}<span class="font-medium">{{user.name}}</span> <div class="text-xs text-moss">{{roleLabel user.role}}</div>{{else}}<span class="muted">System / PMS</span>{{/if}}</td>
+        <td><code class="rounded-md bg-sage px-1.5 py-0.5 font-mono text-[11px] text-forest">{{action}}</code></td>
+        <td>{{details}}</td>
+      </tr>
+      {{else}}<tr><td colspan="4" class="py-10 text-center text-moss">No activity yet.</td></tr>{{/each}}
+    </tbody>
+  </table>
+</div>
+{{> footer}}

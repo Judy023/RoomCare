@@ -1,0 +1,138 @@
+{{> head}}
+<a href="javascript:history.back()" class="back-link">← Back</a>
+<div class="page-header mt-3">
+  <div>
+    <h1 class="page-title flex flex-wrap items-center gap-3">{{wo.code}} {{badge wo.status}} {{priorityBadge wo.priority}}</h1>
+    <p class="page-sub">Room <a href="/rooms/{{wo.room.id}}" class="link">{{wo.room.roomNo}}</a> ({{wo.room.type}}{{#unless (hiddenStatus wo.room.status)}}, {{label wo.room.status}}{{/unless}}) · {{wo.category}}</p>
+  </div>
+  {{#unless (includes "CLOSED,CANCELLED" wo.status)}}
+  <div class="{{#if wo.sla.overdue}}notice-danger{{else}}notice-ok{{/if}} font-medium">
+    SLA {{wo.sla.hours}} h · {{#if wo.sla.overdue}}<b>overdue</b> since{{else}}due{{/if}} {{formatDate wo.sla.dueAt}}
+  </div>
+  {{/unless}}
+</div>
+
+<section class="card mb-5 overflow-x-auto px-4 py-5 sm:px-6" aria-label="Timeline">
+  <ol class="flex min-w-[640px]">
+    {{#each timeline}}
+    <li class="relative flex-1 px-2 text-center">
+      {{!-- Connector from the previous step; green once this step has happened. --}}
+      {{#unless @first}}<span class="absolute right-1/2 top-[7px] h-0.5 w-full {{#if at}}bg-forest{{else}}bg-line{{/if}}" aria-hidden="true"></span>{{/unless}}
+      <span class="relative mx-auto block h-4 w-4 rounded-full border-[3px] border-white {{#if at}}bg-forest ring-1 ring-forest/30{{else}}bg-line ring-1 ring-line{{/if}}" aria-hidden="true"></span>
+      <div class="mt-2 text-sm font-semibold {{#unless at}}font-medium text-moss/60{{/unless}}">{{this.label}}</div>
+      {{#if by}}<div class="text-xs text-moss">{{by}}</div>{{/if}}
+      <div class="mt-0.5 text-xs tabular-nums {{#if at}}text-moss{{else}}text-moss/50{{/if}}">{{#if at}}{{formatDate at}}{{else}}—{{/if}}</div>
+    </li>
+    {{/each}}
+  </ol>
+</section>
+
+<div class="grid gap-5 lg:grid-cols-3">
+  <div class="space-y-5 lg:col-span-2">
+    <section class="card">
+      <h2 class="section-title">Issue</h2>
+      <p class="whitespace-pre-line leading-relaxed">{{wo.description}}</p>
+      <dl class="mt-5 grid grid-cols-2 gap-4 rounded-xl bg-ivory p-4 text-sm sm:grid-cols-3">
+        <div><dt class="stat-label">Reported by</dt><dd class="mt-1 font-medium">{{wo.reportedBy.name}}</dd></div>
+        <div><dt class="stat-label">Technician</dt><dd class="mt-1 font-medium">{{fallback wo.assignedTo.name "Not assigned"}}{{#if wo.assignedTo.specialty}} <span class="muted">({{wo.assignedTo.specialty}})</span>{{/if}}</dd></div>
+        <div><dt class="stat-label">Cleaning task</dt><dd class="mt-1 font-medium">{{fallback wo.task.code "—"}}</dd></div>
+      </dl>
+      {{#if wo.holdReason}}<p class="notice-warn mt-4"><b>On hold:</b> {{wo.holdReason}}</p>{{/if}}
+      {{#if wo.resolutionNotes}}<p class="notice-ok mt-4"><b>Resolution:</b> {{wo.resolutionNotes}}</p>{{/if}}
+      {{#if wo.photoUrl}}
+      <a href="{{wo.photoUrl}}" class="js-photo group relative mt-5 inline-block overflow-hidden rounded-xl border border-line shadow-soft transition hover:shadow-lift" data-caption="{{wo.code}} · Room {{wo.room.roomNo}} · {{wo.category}}" title="Click to zoom">
+        <img src="{{wo.photoUrl}}" alt="Issue photo" class="max-h-72 cursor-zoom-in">
+        <span class="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-forest/80 px-2.5 py-1 text-[11px] font-semibold text-white opacity-0 transition group-hover:opacity-100"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg> Zoom</span>
+      </a>
+      {{/if}}
+    </section>
+
+    <section class="card overflow-x-auto">
+      <h2 class="section-title">Parts used</h2>
+      <table class="table">
+        <thead><tr><th>Part</th><th>Qty</th><th>Logged by</th><th>When</th></tr></thead>
+        <tbody>
+          {{#each wo.parts}}
+          <tr><td>{{item.name}} <span class="muted">({{item.sku}})</span></td><td>{{qty}} {{item.unit}}</td><td>{{technician.name}}</td><td>{{formatDate createdAt}}</td></tr>
+          {{else}}<tr><td colspan="4" class="py-6 text-center text-moss">No parts logged.</td></tr>{{/each}}
+        </tbody>
+      </table>
+      {{#if can.logParts}}
+      <form method="POST" action="/work-orders/{{wo.id}}/parts" class="mt-5 flex flex-wrap items-end gap-2 border-t border-line pt-5">
+        <div class="min-w-[200px] flex-1">
+          <label class="label" for="itemId">Log part from inventory</label>
+          <select id="itemId" name="itemId" class="input" required>
+            <option value="">Select part…</option>
+            {{#each items}}<option value="{{id}}">{{name}} — {{quantity}} {{unit}} in stock</option>{{/each}}
+          </select>
+        </div>
+        <div class="w-24"><label class="label" for="qty">Qty</label><input id="qty" type="number" name="qty" min="1" value="1" class="input" required></div>
+        <button class="btn">Log &amp; deduct</button>
+      </form>
+      {{/if}}
+    </section>
+  </div>
+
+  <aside class="space-y-5">
+    {{#if can.assign}}
+    <form method="POST" action="/work-orders/{{wo.id}}/assign" class="card space-y-3">
+      <h2 class="section-title">{{#if wo.assignedTo}}Reassign{{else}}Assign technician{{/if}}</h2>
+      <select name="technicianId" class="input" required>
+        <option value="">Select technician…</option>
+        {{#each technicians}}<option value="{{id}}" {{selected id @root.wo.assignedToId}}>{{name}}{{#if specialty}} — {{specialty}}{{/if}}</option>{{/each}}
+      </select>
+      <select name="priority" class="input">
+        {{#each priorities}}<option value="{{this}}" {{selected this @root.wo.priority}}>{{label this}} priority</option>{{/each}}
+      </select>
+      <button class="btn w-full">Assign &amp; send SMS</button>
+    </form>
+    {{/if}}
+
+    {{#if can.cancel}}
+    <form method="POST" action="/work-orders/{{wo.id}}/cancel" class="card space-y-2" onsubmit="return confirm('Cancel {{wo.code}} as a duplicate?')">
+      <h2 class="section-title">Duplicate report?</h2>
+      <input name="note" class="input" placeholder="Duplicate of… (optional)">
+      <button class="btn-ghost-danger w-full">Cancel as duplicate</button>
+    </form>
+    {{/if}}
+
+    {{#if can.start}}
+    <form method="POST" action="/work-orders/{{wo.id}}/start" class="card">
+      <h2 class="section-title">New assignment</h2>
+      <button class="btn w-full py-3">Accept &amp; start work</button>
+    </form>
+    {{/if}}
+
+    {{#if can.resolve}}
+    <form method="POST" action="/work-orders/{{wo.id}}/resolve" class="card space-y-2">
+      <h2 class="section-title">Resolve</h2>
+      <textarea name="notes" rows="3" class="input" required placeholder="What did you fix? e.g. Replaced run capacitor, tested 30 min"></textarea>
+      <button class="btn w-full">Mark resolved</button>
+    </form>
+    {{/if}}
+
+    {{#if can.hold}}
+    <form method="POST" action="/work-orders/{{wo.id}}/hold" class="card space-y-2">
+      <h2 class="section-title">Parts not in stock?</h2>
+      <input name="reason" class="input" placeholder="Awaiting parts — e.g. compressor ordered">
+      <button class="btn-secondary w-full">Put on hold</button>
+    </form>
+    {{/if}}
+
+    {{#if can.resume}}
+    <form method="POST" action="/work-orders/{{wo.id}}/resume" class="card">
+      <h2 class="section-title">Parts arrived?</h2>
+      <button class="btn w-full">Resume work</button>
+    </form>
+    {{/if}}
+
+    {{#if can.inspect}}
+    <div class="card">
+      <h2 class="section-title">Ready for inspection</h2>
+      <a href="/inspections/new?roomId={{wo.room.id}}" class="btn w-full">Inspect Room {{wo.room.roomNo}}</a>
+    </div>
+    {{/if}}
+  </aside>
+</div>
+{{> photoViewer}}
+{{> footer}}

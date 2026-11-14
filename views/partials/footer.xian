@@ -1,0 +1,11 @@
+</main>
+<footer class="border-t border-line/70 px-4 py-5 text-center text-xs text-moss/70">
+  &copy; 2026 RoomCare · Housekeeping &amp; Hotel Maintenance Management <span class="text-line">·</span> Built on XianFire Framework
+</footer>
+</div>
+</div>
+<script>
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+</script>
+</body>
+</html>
