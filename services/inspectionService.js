@@ -38,7 +38,7 @@ export const pendingRooms = async () => {
 
 export const listInspections = (limit = 50) =>
   Inspection.findAll({
-    include: [{ model: Room, as: "room" }, { model: User, as: "supervisor", attributes: ["id", "name"] }],
+    include: [{ model: Room, as: "room" }, { model: User, as: "admin", attributes: ["id", "name"] }],
     order: [["createdAt", "DESC"]],
     limit,
   });
@@ -68,7 +68,7 @@ export const recordInspection = async (roomId, admin, { items, remarks }) => {
   const result = failed.length ? InspectionResult.FAIL : InspectionResult.PASS;
 
   const inspection = await Inspection.create({
-    roomId: room.id, supervisorId: admin.id, taskId: lastTask?.id ?? null, result, checklist, remarks: remarks?.trim() || null,
+    roomId: room.id, adminId: admin.id, taskId: lastTask?.id ?? null, result, checklist, remarks: remarks?.trim() || null,
   });
   const now = new Date();
 

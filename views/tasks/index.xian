@@ -81,7 +81,7 @@
             <td>{{title}} {{priorityBadge priority}}{{#if notes}}<div class="mt-0.5 text-xs text-moss">{{nl2br notes}}</div>{{/if}}</td>
             <td>{{housekeeper.name}}</td>
             <td>{{badge status}}</td>
-            <td class="whitespace-nowrap">{{formatDate createdAt}}<div class="text-xs text-moss">by {{supervisor.name}}</div></td>
+            <td class="whitespace-nowrap">{{formatDate createdAt}}<div class="text-xs text-moss">by {{admin.name}}</div></td>
             <td class="whitespace-nowrap">{{minutesBetween startedAt completedAt}}</td>
           </tr>
           {{else}}<tr><td colspan="7" class="py-10 text-center text-moss">No tasks.</td></tr>{{/each}}

@@ -11,12 +11,12 @@ import { Notification } from "./notificationModel.js";
 import { SystemLog } from "./systemLogModel.js";
 
 // Admin assigns, Housekeeper performs, CleaningTask is for a Room
-// (the assigning admin is stored in the existing supervisorId column / "supervisor" alias, kept for data compatibility)
+// (the assigning admin is stored in adminId / "admin" alias)
 Room.hasMany(CleaningTask, { as: "tasks", foreignKey: "roomId" });
 CleaningTask.belongsTo(Room, { as: "room", foreignKey: "roomId" });
 User.hasMany(CleaningTask, { as: "assignedTasks", foreignKey: "housekeeperId" });
 CleaningTask.belongsTo(User, { as: "housekeeper", foreignKey: "housekeeperId" });
-CleaningTask.belongsTo(User, { as: "supervisor", foreignKey: "supervisorId" });
+CleaningTask.belongsTo(User, { as: "admin", foreignKey: "adminId" });
 
 // Housekeeper reports a WorkOrder against a Room, Technician resolves it
 Room.hasMany(WorkOrder, { as: "workOrders", foreignKey: "roomId" });
@@ -32,10 +32,10 @@ InventoryItem.hasMany(PartUsage, { as: "usages", foreignKey: "itemId" });
 PartUsage.belongsTo(InventoryItem, { as: "item", foreignKey: "itemId" });
 PartUsage.belongsTo(User, { as: "technician", foreignKey: "technicianId" });
 
-// Admin conducts an Inspection of the Room (stored in the existing supervisorId column)
+// Admin conducts an Inspection of the Room
 Room.hasMany(Inspection, { as: "inspections", foreignKey: "roomId" });
 Inspection.belongsTo(Room, { as: "room", foreignKey: "roomId" });
-Inspection.belongsTo(User, { as: "supervisor", foreignKey: "supervisorId" });
+Inspection.belongsTo(User, { as: "admin", foreignKey: "adminId" });
 Inspection.belongsTo(CleaningTask, { as: "task", foreignKey: "taskId" });
 
 User.hasMany(Notification, { as: "notifications", foreignKey: "recipientId", onDelete: "CASCADE" });

@@ -13,6 +13,7 @@
     "xian": "nodemon index.js",
     "migrate": "node migrate.js",
     "migrate:remove-supervisor": "node migrate-remove-supervisor.js",
+    "migrate:rename-supervisor-columns": "node migrate-rename-supervisor-columns.js",
     "seed": "node seed.js",
     "create:model": "node create.js model",
     "create:controller": "node create.js controller",

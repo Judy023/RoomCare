@@ -15,7 +15,7 @@ const byWorkOrder = (a, b) =>
 const taskIncludes = [
   { model: Room, as: "room" },
   { model: User, as: "housekeeper", attributes: ["id", "name", "staffCode"] },
-  { model: User, as: "supervisor", attributes: ["id", "name"] },
+  { model: User, as: "admin", attributes: ["id", "name"] },
 ];
 
 // CT-<year>-<MMDD>-<nnn>, numbered per day from the highest code already used today.
@@ -78,7 +78,7 @@ export const assignTask = async ({ roomId, housekeeperId, taskType, priority, no
   if (open) throw new AppError(`Room ${room.roomNo} already has an open task (${open.code}).`);
 
   const task = await CleaningTask.create({
-    code: await nextTaskCode(), roomId: room.id, housekeeperId: housekeeper.id, supervisorId: admin.id,
+    code: await nextTaskCode(), roomId: room.id, housekeeperId: housekeeper.id, adminId: admin.id,
     taskType, title: TASK_TYPES[taskType], priority, notes: notes?.trim() || null, dueAt: dueAt || null,
     status: TaskStatus.PENDING,
   });

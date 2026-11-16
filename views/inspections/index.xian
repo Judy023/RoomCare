@@ -85,7 +85,7 @@
       <tr>
         <td class="whitespace-nowrap text-moss">{{formatDate createdAt}}</td>
         <td><a href="/rooms/{{room.id}}" class="link">{{room.roomNo}}</a></td>
-        <td>{{supervisor.name}}</td>
+        <td>{{admin.name}}</td>
         <td>{{badge result}}</td>
         <td class="text-xs">{{#each checklist}}{{#unless passed}}<div class="text-terracotta">✗ {{this.label}}</div>{{/unless}}{{/each}}</td>
         <td>{{fallback remarks "—"}}</td>

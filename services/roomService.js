@@ -56,7 +56,7 @@ export const roomDetail = async (id) => {
     include: [
       { model: CleaningTask, as: "tasks", include: [{ model: User, as: "housekeeper", attributes: ["id", "name"] }] },
       { model: WorkOrder, as: "workOrders", include: [{ model: User, as: "assignedTo", attributes: ["id", "name"] }] },
-      { model: Inspection, as: "inspections", include: [{ model: User, as: "supervisor", attributes: ["id", "name"] }] },
+      { model: Inspection, as: "inspections", include: [{ model: User, as: "admin", attributes: ["id", "name"] }] },
     ],
     order: [
       [{ model: CleaningTask, as: "tasks" }, "createdAt", "DESC"],

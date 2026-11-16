@@ -45,7 +45,7 @@
       <thead><tr><th>Date</th><th>Inspected by</th><th>Result</th><th>Remarks</th></tr></thead>
       <tbody>
         {{#each room.inspections}}
-        <tr><td class="whitespace-nowrap">{{formatDate createdAt}}</td><td>{{supervisor.name}}</td><td>{{badge result}}</td><td>{{fallback remarks "—"}}</td></tr>
+        <tr><td class="whitespace-nowrap">{{formatDate createdAt}}</td><td>{{admin.name}}</td><td>{{badge result}}</td><td>{{fallback remarks "—"}}</td></tr>
         {{else}}<tr><td colspan="4" class="py-8 text-center text-moss">Not inspected yet.</td></tr>{{/each}}
       </tbody>
     </table>
