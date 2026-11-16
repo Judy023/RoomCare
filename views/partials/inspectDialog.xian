@@ -1,0 +1,50 @@
+{{!-- Shared inspection modal. Any <a class="js-inspect" href="/inspections/new?roomId=…"> opens the form here
+     instead of navigating; if the form cannot be loaded (or the browser has no <dialog>), the link works as before. --}}
+<dialog id="inspect-modal" class="dialog max-w-lg" aria-label="Inspect room"></dialog>
+<script>
+  (() => {
+    const dialog = document.getElementById("inspect-modal");
+    if (!dialog || typeof dialog.showModal !== "function") return;
+    const lock = (on) => {
+      const gap = window.innerWidth - document.documentElement.clientWidth;
+      document.documentElement.style.overflow = on ? "hidden" : "";
+      document.body.style.paddingRight = on && gap ? gap + "px" : "";
+    };
+    const wire = () => {
+      const form = dialog.querySelector("form");
+      const boxes = [...dialog.querySelectorAll(".js-item")];
+      const verdict = dialog.querySelector(".js-verdict");
+      const update = () => {
+        if (!verdict) return;
+        const pass = boxes.every((b) => b.checked);
+        verdict.className = "js-verdict " + (pass ? "notice-ok" : "notice-danger");
+        verdict.innerHTML = pass
+          ? "Result: <b>PASS</b> — the room will be set to Inspected, and repairs closed."
+          : "Result: <b>FAIL</b> — unticked items send the room back.";
+      };
+      boxes.forEach((b) => b.addEventListener("change", update));
+      dialog.querySelectorAll(".js-close-inspect").forEach((b) => b.addEventListener("click", () => dialog.close()));
+      form?.addEventListener("submit", () => { const b = form.querySelector("button:not([type])"); if (b) b.disabled = true; });
+    };
+    document.querySelectorAll("a.js-inspect").forEach((link) => {
+      link.addEventListener("click", async (e) => {
+        e.preventDefault();
+        try {
+          const url = new URL(link.href, location.href);
+          url.searchParams.set("modal", "1");
+          url.searchParams.set("back", location.pathname + location.search);
+          const res = await fetch(url, { credentials: "same-origin" });
+          if (!res.ok) throw new Error(res.status);
+          dialog.innerHTML = await res.text();
+          wire();
+          lock(true);
+          dialog.showModal();
+        } catch {
+          location.href = link.href; // fall back to the full page
+        }
+      });
+    });
+    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener("close", () => { dialog.innerHTML = ""; lock(false); });
+  })();
+</script>

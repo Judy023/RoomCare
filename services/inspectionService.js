@@ -7,6 +7,8 @@ import { AppError } from "../utils/http.js";
 import { logAction } from "./logService.js";
 import { notifyUser } from "./notificationService.js";
 import { getRoom, setStatus } from "./roomService.js";
+import { queueCleaningCompleted } from "./pmsIntegrationService.js";
+import { PMS } from "../config/integrations.js";
 
 const INSPECTABLE = [RoomStatus.VACANT_CLEAN, RoomStatus.OUT_OF_ORDER];
 
@@ -35,6 +37,36 @@ export const pendingRooms = async () => {
     !room.tasks.some((t) => ACTIVE_TASK_STATUSES.includes(t.status)) &&
     !room.workOrders.some((w) => ACTIVE_WO_STATUSES.includes(w.status)));
 };
+
+// Admin overview: every vacant clean room (ready or not), plus out-of-order rooms whose repairs are all resolved.
+// `ready` = it can be inspected now; otherwise `waitingFor` says what is still open.
+export const inspectionQueue = async () => {
+  const rooms = await Room.findAll({
+    where: { status: INSPECTABLE },
+    include: [
+      { model: CleaningTask, as: "tasks", required: false, where: { status: ACTIVE_TASK_STATUSES } },
+      { model: WorkOrder, as: "workOrders", required: false, where: { status: [...ACTIVE_WO_STATUSES, WorkOrderStatus.RESOLVED] } },
+    ],
+    order: [["floor", "ASC"], ["roomNo", "ASC"]],
+  });
+  return rooms
+    .map((room) => {
+      const openTask = room.tasks[0];
+      const openWo = room.workOrders.find((w) => ACTIVE_WO_STATUSES.includes(w.status));
+      const resolved = room.workOrders.filter((w) => w.status === WorkOrderStatus.RESOLVED).length;
+      const waitingFor = openTask ? `cleaning task ${openTask.code}` : openWo ? `work order ${openWo.code}` : null;
+      return { ...room.get({ plain: true }), ready: !waitingFor, waitingFor, resolved };
+    })
+    .filter((room) => room.status === RoomStatus.VACANT_CLEAN || room.ready);
+};
+
+// Occupied rooms with a resolved repair: they can only be inspected after the guest checks out.
+export const awaitingCheckout = () =>
+  Room.findAll({
+    where: { status: RoomStatus.OCCUPIED },
+    include: [{ model: WorkOrder, as: "workOrders", required: true, where: { status: WorkOrderStatus.RESOLVED } }],
+    order: [["floor", "ASC"], ["roomNo", "ASC"]],
+  });
 
 export const listInspections = (limit = 50) =>
   Inspection.findAll({
@@ -77,6 +109,10 @@ export const recordInspection = async (roomId, admin, { items, remarks }) => {
     await CleaningTask.update({ status: TaskStatus.INSPECTED, inspectedAt: now }, { where: { roomId: room.id, status: TaskStatus.DONE } });
     for (const wo of resolvedWos) await wo.update({ status: WorkOrderStatus.CLOSED, closedAt: now });
     await logAction(admin.id, "INSPECTION_PASS", "Room", room.id, `Room ${room.roomNo} released${resolvedWos.length ? `, closed ${resolvedWos.map((w) => w.code).join(", ")}` : ""}`);
+    // With PMS_NOTIFY_ON=inspection_passed the PMS hears about the clean room only once it is verified.
+    if (lastTask && PMS.notifyOn === "inspection_passed") {
+      queueCleaningCompleted(await lastTask.reload(), "PASSED");
+    }
     return { inspection, result };
   }
 

@@ -5,6 +5,8 @@ import { AppError, startOfToday } from "../utils/http.js";
 import { logAction } from "./logService.js";
 import { notifyUser, notifyRoles } from "./notificationService.js";
 import { getRoom, setStatus } from "./roomService.js";
+import { queueCleaningCompleted } from "./pmsIntegrationService.js";
+import { PMS } from "../config/integrations.js";
 
 const label = (s) => s.replace(/_/g, " ").toLowerCase();
 const STATUS_RANK = { IN_PROGRESS: 0, PENDING: 1, DONE: 2, INSPECTED: 3 };
@@ -19,7 +21,7 @@ const taskIncludes = [
 ];
 
 // CT-<year>-<MMDD>-<nnn>, numbered per day from the highest code already used today.
-const nextTaskCode = async () => {
+export const nextTaskCode = async () => {
   const now = new Date();
   const mmdd = String(now.getMonth() + 1).padStart(2, "0") + String(now.getDate()).padStart(2, "0");
   const prefix = `CT-${now.getFullYear()}-${mmdd}-`;
@@ -54,15 +56,26 @@ export const listForHousekeeper = async (housekeeperId) => {
   return tasks.sort(byWorkOrder);
 };
 
-// Vacant dirty rooms that nobody has been assigned to clean yet.
+// Vacant dirty rooms that nobody has been assigned to clean yet (no open task, or only an unassigned PMS task).
 export const roomsNeedingTask = async () => {
   const rooms = await Room.findAll({
     where: { status: RoomStatus.VACANT_DIRTY },
     include: [{ model: CleaningTask, as: "tasks", required: false, where: { status: ACTIVE_TASK_STATUSES } }],
     order: [["floor", "ASC"], ["roomNo", "ASC"]],
   });
-  return rooms.filter((r) => r.tasks.length === 0);
+  return rooms.filter((r) => r.tasks.every((t) => !t.housekeeperId));
 };
+
+// Every vacant dirty room, with its open task (if one is already assigned) — for the admin overview.
+export const vacantDirtyRooms = () =>
+  Room.findAll({
+    where: { status: RoomStatus.VACANT_DIRTY },
+    include: [{
+      model: CleaningTask, as: "tasks", required: false, where: { status: ACTIVE_TASK_STATUSES },
+      include: [{ model: User, as: "housekeeper", attributes: ["id", "name"] }],
+    }],
+    order: [["floor", "ASC"], ["roomNo", "ASC"]],
+  });
 
 // 1.0 Assign Cleaning Tasks
 export const assignTask = async ({ roomId, housekeeperId, taskType, priority, notes, dueAt }, admin) => {
@@ -75,14 +88,24 @@ export const assignTask = async ({ roomId, housekeeperId, taskType, priority, no
     throw new AppError(`Room ${room.roomNo} is occupied — only a stayover service can be assigned.`);
   }
   const open = await CleaningTask.findOne({ where: { roomId: room.id, status: ACTIVE_TASK_STATUSES } });
-  if (open) throw new AppError(`Room ${room.roomNo} already has an open task (${open.code}).`);
+  if (open && open.housekeeperId) throw new AppError(`Room ${room.roomNo} already has an open task (${open.code}).`);
 
-  const task = await CleaningTask.create({
-    code: await nextTaskCode(), roomId: room.id, housekeeperId: housekeeper.id, adminId: admin.id,
-    taskType, title: TASK_TYPES[taskType], priority, notes: notes?.trim() || null, dueAt: dueAt || null,
-    status: TaskStatus.PENDING,
-  });
-  await logAction(admin.id, "TASK_ASSIGN", "CleaningTask", task.id, `${task.code} Room ${room.roomNo} → ${housekeeper.name}`);
+  let task;
+  if (open) {
+    // A task created automatically from a PMS check-out is waiting for a housekeeper: assign that one
+    // instead of creating a second task for the same room.
+    task = await open.update({
+      housekeeperId: housekeeper.id, adminId: admin.id, assignedAt: new Date(), taskType, title: TASK_TYPES[taskType], priority,
+      notes: [open.notes, notes?.trim()].filter(Boolean).join("\n") || null, dueAt: dueAt || open.dueAt || null,
+    });
+  } else {
+    task = await CleaningTask.create({
+      code: await nextTaskCode(), roomId: room.id, housekeeperId: housekeeper.id, adminId: admin.id,
+      taskType, title: TASK_TYPES[taskType], priority, notes: notes?.trim() || null, dueAt: dueAt || null,
+      status: TaskStatus.PENDING, source: "MANUAL", assignedAt: new Date(),
+    });
+  }
+  await logAction(admin.id, "TASK_ASSIGN", "CleaningTask", task.id, `${task.code} Room ${room.roomNo} → ${housekeeper.name}${task.source === "PMS" ? " (PMS check-out task)" : ""}`);
   await notifyUser(housekeeper, {
     channel: "PUSH",
     title: `New task: Room ${room.roomNo}`,
@@ -125,6 +148,11 @@ export const completeTask = async (id, housekeeper, notes) => {
   const room = task.room;
   if (room.status === RoomStatus.CLEANING) await setStatus(room, RoomStatus.VACANT_CLEAN, housekeeper.id, `${task.code} done`);
   await logAction(housekeeper.id, "TASK_DONE", "CleaningTask", task.id, task.code);
+  // Tell the PMS the room is clean. Only for vacant rooms that are now clean — not stayovers or rooms out of order.
+  // Not awaited: the housekeeper's action never waits on, or fails because of, the PMS.
+  if (room.status === RoomStatus.VACANT_CLEAN && PMS.notifyOn === "task_completed") {
+    queueCleaningCompleted(task, "PENDING");
+  }
   if (room.status !== RoomStatus.OCCUPIED) {
     await notifyRoles("admin", {
       channel: "PUSH",

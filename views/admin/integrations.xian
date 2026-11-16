@@ -1,0 +1,70 @@
+{{> head}}
+<div class="page-header">
+  <div>
+    <p class="eyebrow">Administration</p>
+    <h1 class="page-title">Integrations</h1>
+    <p class="page-sub">Events exchanged with the PMS and HR/Payroll. RoomCare reports cleaning; the PMS decides availability.</p>
+  </div>
+</div>
+
+<div class="mb-6 grid gap-5 lg:grid-cols-2">
+  <section class="card">
+    <h2 class="section-title">PMS <span class="count">{{label config.pms.mode}}</span></h2>
+    {{#if (eq config.pms.mode "mock")}}
+    <p class="mb-3 rounded-xl border border-dashed border-gold/40 bg-gold-soft/50 p-3 text-sm text-gold-deep"><b>Mock mode.</b> No real PMS is connected. Outgoing events are recorded and marked as mock deliveries; nothing is sent.</p>
+    {{/if}}
+    {{#if (eq config.pms.mode "live")}}{{#unless config.pms.liveReady}}
+    <p class="mb-3 rounded-xl border border-terracotta/30 bg-terracotta-soft p-3 text-sm text-terracotta"><b>Live mode without PMS_OUTBOUND_URL.</b> Outgoing events will fail until it is set.</p>
+    {{/unless}}{{/if}}
+    <ul class="space-y-1.5 text-sm">
+      <li>Incoming webhook: <code class="rounded-md bg-sage px-1.5 py-0.5 font-mono text-[11px] text-forest">POST /api/pms/events</code></li>
+      <li>Webhook token: {{#if config.pms.inboundTokenSet}}<b class="text-leaf">set</b>{{else if config.pms.usingDevToken}}<b class="text-gold-deep">development token</b> <span class="text-moss">— set PMS_WEBHOOK_TOKEN before going live</span>{{else}}<b class="text-terracotta">not set</b>{{/if}}</li>
+      <li>Outbound URL: {{#if config.pms.outboundUrlSet}}<b class="text-leaf">set</b>{{else}}<span class="text-moss">not set</span>{{/if}} · token: {{#if config.pms.outboundTokenSet}}<b class="text-leaf">set</b>{{else}}<span class="text-moss">not set</span>{{/if}} · signing: {{#if config.pms.signingSecretSet}}<b class="text-leaf">on</b>{{else}}<span class="text-moss">off</span>{{/if}}</li>
+      <li>CleaningCompleted is sent when: <b>{{#if (eq config.pms.notifyOn "inspection_passed")}}the inspection passes{{else}}the housekeeper completes the task{{/if}}</b></li>
+      <li>Retries: up to {{config.pms.maxAttempts}} attempts, then the event is marked failed and admins are notified.</li>
+    </ul>
+    <div class="mt-4 flex gap-3 text-sm">
+      <span class="rounded-lg border px-3 py-1.5 {{#if failed}}border-terracotta/30 bg-terracotta-soft text-terracotta{{else}}border-line bg-sage text-moss{{/if}}"><b>{{failed}}</b> failed</span>
+      <span class="rounded-lg border border-line bg-sage px-3 py-1.5 text-moss"><b>{{waiting}}</b> waiting to send</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">HR/Payroll <span class="count">{{#if config.hr.apiTokenSet}}enabled{{else}}not configured{{/if}}</span></h2>
+    {{#unless config.hr.apiTokenSet}}
+    <p class="mb-3 rounded-xl border border-dashed border-gold/40 bg-gold-soft/50 p-3 text-sm text-gold-deep">Set <b>HR_API_TOKEN</b> to let HR/Payroll read housekeeping records. Until then the API answers 503.</p>
+    {{/unless}}
+    <ul class="space-y-1.5 text-sm">
+      <li><code class="rounded-md bg-sage px-1.5 py-0.5 font-mono text-[11px] text-forest">GET /api/hr/job-logs</code> completed jobs (<code class="font-mono text-[11px]">?pending=1</code> = not yet acknowledged)</li>
+      <li><code class="rounded-md bg-sage px-1.5 py-0.5 font-mono text-[11px] text-forest">POST /api/hr/job-logs/ack</code> mark a batch as received</li>
+      <li><code class="rounded-md bg-sage px-1.5 py-0.5 font-mono text-[11px] text-forest">GET /api/hr/work-summary</code> task hours and performance per housekeeper</li>
+      <li class="text-moss">Attendance and overtime are not tracked by RoomCare; the export says so. No pay is computed here.</li>
+    </ul>
+    <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
+      <span class="rounded-lg border border-line bg-sage px-3 py-1.5 text-moss"><b>{{hr.pending}}</b> completed job(s) not yet acknowledged</span>
+      <span class="rounded-lg border border-line bg-sage px-3 py-1.5 text-moss"><b>{{hr.exported}}</b> acknowledged</span>
+      <a href="/reports/housekeeping-jobs.csv?days=30" class="btn-secondary btn-sm">Job logs CSV (30 days)</a>
+    </div>
+  </section>
+</div>
+
+<div class="card overflow-x-auto p-0">
+  <h2 class="section-title px-5 pt-5 sm:px-6">Recent events</h2>
+  <table class="table">
+    <thead><tr><th>When</th><th>System</th><th>Event</th><th>Room / task</th><th>Status</th><th>Details</th><th></th></tr></thead>
+    <tbody>
+      {{#each events}}
+      <tr>
+        <td class="whitespace-nowrap text-moss tabular-nums">{{formatDate createdAt}}</td>
+        <td class="whitespace-nowrap">{{system}} <span class="text-xs text-moss">{{#if (eq direction "IN")}}→ RoomCare{{else}}← RoomCare{{/if}}</span></td>
+        <td><b>{{eventType}}</b><div class="font-mono text-[11px] text-moss">{{eventId}}</div></td>
+        <td class="whitespace-nowrap">{{#if room}}<a href="/rooms/{{room.id}}" class="link">Room {{room.roomNo}}</a>{{/if}}{{#if task}}<div class="font-mono text-[11px] text-moss">{{task.code}}</div>{{/if}}</td>
+        <td class="whitespace-nowrap">{{integrationBadge status}}{{#if attempts}}<div class="text-[11px] text-moss">{{attempts}} attempt(s){{#if nextAttemptAt}} · next {{formatTime nextAttemptAt}}{{/if}}</div>{{/if}}{{#if duplicateCount}}<div class="text-[11px] text-moss">{{duplicateCount}} duplicate(s) ignored</div>{{/if}}</td>
+        <td class="text-sm">{{#if lastError}}<span class="text-terracotta">{{lastError}}</span>{{else}}<span class="text-moss">{{response}}</span>{{/if}}</td>
+        <td>{{#if (eq direction "OUT")}}{{#if (or (eq status "FAILED") (eq status "PENDING"))}}<form method="POST" action="/admin/integrations/{{id}}/retry"><button class="btn-secondary btn-sm">Retry now</button></form>{{/if}}{{/if}}</td>
+      </tr>
+      {{else}}<tr><td colspan="7" class="py-10 text-center text-moss">No integration events yet.</td></tr>{{/each}}
+    </tbody>
+  </table>
+</div>
+{{> footer}}

@@ -28,7 +28,7 @@
         </div>
         <div class="mt-1 text-xs opacity-80">{{type}}</div>
         <div class="mt-2 text-[11px] font-semibold uppercase tracking-wider">{{label status}}</div>
-        {{#each tasks}}<div class="mt-1 text-[11px]">🧹 {{housekeeper.name}} · {{label status}}</div>{{/each}}
+        {{#each tasks}}<div class="mt-1 text-[11px]">🧹 {{fallback housekeeper.name "Unassigned"}} · {{label status}}</div>{{/each}}
         {{#each workOrders}}<div class="mt-0.5 text-[11px]">{{code}} · {{label status}}</div>{{/each}}
       </a>
       {{#if @root.canCheckInOut}}

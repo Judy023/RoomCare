@@ -30,6 +30,22 @@ export const TaskStatus = {
 };
 export const TASK_STATUSES = Object.values(TaskStatus);
 export const ACTIVE_TASK_STATUSES = [TaskStatus.PENDING, TaskStatus.IN_PROGRESS];
+// Where a cleaning task came from: created by an admin, or automatically from a PMS RoomVacated event.
+export const TASK_SOURCES = ["MANUAL", "PMS"];
+
+// Housekeeping statuses shown to people, mapped onto the stored task status (no schema change):
+// PENDING without a housekeeper = Pending Cleaning, PENDING with one = Assigned, IN_PROGRESS = Cleaning In Progress,
+// DONE = Cleaning Completed (and pending verification by inspection), INSPECTED = Verified.
+export const housekeepingStatus = (task) => {
+  if (!task) return "";
+  switch (task.status) {
+    case TaskStatus.PENDING: return task.housekeeperId ? "Assigned" : "Pending Cleaning";
+    case TaskStatus.IN_PROGRESS: return "Cleaning In Progress";
+    case TaskStatus.DONE: return "Cleaning Completed";
+    case TaskStatus.INSPECTED: return "Verified";
+    default: return task.status;
+  }
+};
 export const TASK_TYPES = {
   CHECKOUT_CLEAN: "Checkout clean",
   STAYOVER: "Stayover service",
@@ -61,6 +77,20 @@ export const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 export const SLA_HOURS = { URGENT: 2, HIGH: 4, MEDIUM: 24, LOW: 72 };
 
 export const CHANNELS = ["SMS", "EMAIL", "PUSH", "IN_APP"];
+
+// External integrations (see services/pmsIntegrationService.js and services/hrExportService.js).
+export const INTEGRATION_SYSTEMS = ["PMS", "HR"];
+export const INTEGRATION_DIRECTIONS = ["IN", "OUT"];
+// IN:  PROCESSED | REJECTED          OUT: PENDING → SENDING → SENT, or FAILED after the last retry
+export const IntegrationStatus = {
+  PROCESSED: "PROCESSED",
+  REJECTED: "REJECTED",
+  PENDING: "PENDING",
+  SENDING: "SENDING",
+  SENT: "SENT",
+  FAILED: "FAILED",
+};
+export const INTEGRATION_STATUSES = Object.values(IntegrationStatus);
 
 export const InspectionResult = { PASS: "PASS", FAIL: "FAIL" };
 export const INSPECTION_CHECKLIST = [

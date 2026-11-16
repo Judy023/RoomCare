@@ -32,11 +32,18 @@
       {{#each needTask}}
       <li class="list-row">
         <span><b>Room {{roomNo}}</b> <span class="text-moss">· {{type}} · Floor {{floor}}</span></span>
+        {{#if tasks.length}}
+        {{#each tasks}}
+        {{#if housekeeper}}<span class="shrink-0 text-xs text-moss">{{code}} · {{housekeeper.name}} · {{label status}}</span>
+        {{else}}<span class="flex shrink-0 items-center gap-2"><span class="text-xs text-moss">{{code}}{{#if (eq source "PMS")}} · from PMS{{/if}}</span><a href="/tasks?roomId={{../id}}" class="btn btn-sm">Assign</a></span>{{/if}}
+        {{/each}}
+        {{else}}
         <a href="/tasks?roomId={{id}}" class="btn btn-sm">Assign</a>
+        {{/if}}
       </li>
       {{/each}}
     </ul>
-    {{else}}<p class="empty">Every vacant dirty room has a housekeeper assigned.</p>{{/if}}
+    {{else}}<p class="empty">No vacant dirty rooms.</p>{{/if}}
   </section>
 
   <section class="card">
@@ -68,12 +75,29 @@
     <ul class="divide-y divide-line">
       {{#each toInspect}}
       <li class="list-row">
-        <span class="flex flex-wrap items-center gap-1.5"><b>Room {{roomNo}}</b> {{badge status}} {{#if workOrders.length}}<span class="text-moss">· {{workOrders.length}} repair(s) resolved</span>{{/if}}</span>
-        <a href="/inspections/new?roomId={{id}}" class="btn btn-sm">Inspect</a>
+        <span class="flex flex-wrap items-center gap-1.5"><b>Room {{roomNo}}</b> {{badge status}} {{#if resolved}}<span class="text-moss">· {{resolved}} repair(s) resolved</span>{{/if}}</span>
+        {{#if ready}}
+        <a href="/inspections/new?roomId={{id}}" class="btn btn-sm js-inspect">Inspect</a>
+        {{else}}
+        <span class="shrink-0 text-xs text-moss">waiting for {{waitingFor}}</span>
+        {{/if}}
       </li>
       {{/each}}
     </ul>
-    {{else}}<p class="empty">Nothing waiting for inspection.</p>{{/if}}
+    {{else}}<p class="empty">No vacant clean rooms.</p>{{/if}}
+    {{#if needCheckout.length}}
+    <div class="mt-5 rounded-xl border border-dashed border-gold/40 bg-gold-soft/50 p-4">
+      <h3 class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gold-deep">Waiting for guest check-out · {{needCheckout.length}}</h3>
+      <ul class="space-y-1.5 text-sm">
+        {{#each needCheckout}}
+        <li class="flex items-center justify-between gap-3">
+          <span><a href="/rooms/{{id}}" class="link">Room {{roomNo}}</a> <span class="text-moss">· {{workOrders.length}} repair(s) resolved, guest still in room</span></span>
+          <form method="POST" action="/rooms/{{id}}/checkout" onsubmit="return confirm('Check out the guest in room {{roomNo}}?')"><button class="btn-secondary btn-sm">Check out</button></form>
+        </li>
+        {{/each}}
+      </ul>
+    </div>
+    {{/if}}
   </section>
 
   <section class="card">
@@ -102,4 +126,5 @@
   </section>
   {{/if}}
 </div>
+{{> inspectDialog}}
 {{> footer}}

@@ -9,6 +9,7 @@ import { PartUsage } from "./partUsageModel.js";
 import { Inspection } from "./inspectionModel.js";
 import { Notification } from "./notificationModel.js";
 import { SystemLog } from "./systemLogModel.js";
+import { IntegrationEvent } from "./integrationEventModel.js";
 
 // Admin assigns, Housekeeper performs, CleaningTask is for a Room
 // (the assigning admin is stored in adminId / "admin" alias)
@@ -43,4 +44,8 @@ Notification.belongsTo(User, { as: "recipient", foreignKey: "recipientId" });
 
 SystemLog.belongsTo(User, { as: "user", foreignKey: "userId" });
 
-export { sequelize, User, Room, CleaningTask, WorkOrder, InventoryItem, PartUsage, Inspection, Notification, SystemLog };
+// Integration events point at the room / cleaning task they created or reported (both optional).
+IntegrationEvent.belongsTo(Room, { as: "room", foreignKey: "roomId", constraints: false });
+IntegrationEvent.belongsTo(CleaningTask, { as: "task", foreignKey: "taskId", constraints: false });
+
+export { sequelize, User, Room, CleaningTask, WorkOrder, InventoryItem, PartUsage, Inspection, Notification, SystemLog, IntegrationEvent };

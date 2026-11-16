@@ -1,0 +1,52 @@
+{{!-- Inspection form without the page layout, loaded into the shared modal (partials/inspectDialog). --}}
+<form method="POST" action="/inspections" class="flex max-h-[85vh] flex-col">
+  <input type="hidden" name="roomId" value="{{room.id}}">
+  <input type="hidden" name="back" value="{{back}}">
+  <div class="flex items-start justify-between gap-3 border-b border-line px-6 py-5">
+    <div>
+      <h2 class="font-display text-xl font-semibold">Inspect Room {{room.roomNo}}</h2>
+      <p class="muted">{{room.type}} · Floor {{room.floor}}</p>
+    </div>
+    <button type="button" class="js-close-inspect icon-btn text-xl leading-none" aria-label="Close">×</button>
+  </div>
+
+  <div class="space-y-5 overflow-y-auto overscroll-contain px-6 py-5">
+    {{#unless state.ok}}
+    <div class="notice-warn px-5 py-4">{{state.reason}}</div>
+    {{else}}
+    <div class="space-y-1 rounded-xl bg-sage px-4 py-3 text-sm">
+      {{#if lastTask}}
+      <p>🧹 <b>{{lastTask.title}}</b> ({{lastTask.code}}){{#if lastTask.housekeeper.name}} by {{lastTask.housekeeper.name}}{{/if}}, done {{formatDate lastTask.completedAt}}</p>
+      {{else}}
+      <p class="muted">No completed cleaning task on record for this room.</p>
+      {{/if}}
+      {{#each resolvedWos}}<p>🔧 {{code}} {{category}}: {{description}} — resolved{{#if assignedTo.name}} by {{assignedTo.name}}{{/if}}</p>{{/each}}
+    </div>
+
+    <fieldset>
+      <legend class="section-title">Checklist <span class="font-normal muted">— tick every item that passes</span></legend>
+      <div class="space-y-2">
+        {{#each checklist}}
+        <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-line px-4 py-3 transition hover:border-moss/30 hover:bg-ivory has-[:checked]:border-leaf/30 has-[:checked]:bg-leaf-soft">
+          <input type="checkbox" name="items" value="{{key}}" class="h-5 w-5 accent-forest js-item">
+          <span class="flex-1 text-sm">{{this.label}}</span>
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-moss/70">{{kind}}</span>
+        </label>
+        {{/each}}
+      </div>
+    </fieldset>
+
+    <div>
+      <label class="label" for="remarks-modal">Remarks</label>
+      <textarea id="remarks-modal" name="remarks" rows="2" class="input" placeholder="What needs fixing if it failed"></textarea>
+    </div>
+
+    <div class="js-verdict notice-danger">Result: <b>FAIL</b> — unticked items send the room back.</div>
+    {{/unless}}
+  </div>
+
+  <div class="flex gap-2 rounded-b-2xl border-t border-line bg-ivory px-6 py-4">
+    <button type="button" class="btn-ghost-danger js-close-inspect flex-1">{{#if state.ok}}Cancel{{else}}Close{{/if}}</button>
+    {{#if state.ok}}<button class="btn flex-1">Record inspection</button>{{/if}}
+  </div>
+</form>

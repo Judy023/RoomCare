@@ -7,5 +7,9 @@ export const Room = sequelize.define("Room", {
   type: { type: DataTypes.STRING, allowNull: false },
   floor: { type: DataTypes.INTEGER, allowNull: false },
   status: { type: DataTypes.ENUM(...ROOM_STATUSES), allowNull: false, defaultValue: "VACANT_DIRTY" },
-  notes: { type: DataTypes.STRING }
+  notes: { type: DataTypes.STRING },
+  // Availability as last reported by the PMS (added by migrate-pms-hr-integration.js).
+  // Only PMS events write these — RoomCare never sets the PMS availability itself.
+  pmsStatus: { type: DataTypes.STRING(40) },
+  pmsStatusAt: { type: DataTypes.DATE }
 });

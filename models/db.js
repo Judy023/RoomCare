@@ -24,6 +24,7 @@
     SOFTWARE.
     */
 
+import "../config/env.js";
 import { Sequelize } from "sequelize";
 
 export const DB_NAME = process.env.DB_NAME || "RoomCare";

@@ -76,12 +76,12 @@
         <tbody>
           {{#each tasks}}
           <tr>
-            <td class="whitespace-nowrap font-mono text-xs text-moss">{{code}}</td>
+            <td class="whitespace-nowrap font-mono text-xs text-moss">{{code}}{{#if (eq source "PMS")}}<div class="font-sans text-[11px] font-semibold text-steel">from PMS</div>{{/if}}</td>
             <td><a href="/rooms/{{room.id}}" class="link">{{room.roomNo}}</a></td>
             <td>{{title}} {{priorityBadge priority}}{{#if notes}}<div class="mt-0.5 text-xs text-moss">{{nl2br notes}}</div>{{/if}}</td>
-            <td>{{housekeeper.name}}</td>
-            <td>{{badge status}}</td>
-            <td class="whitespace-nowrap">{{formatDate createdAt}}<div class="text-xs text-moss">by {{admin.name}}</div></td>
+            <td>{{#if housekeeper}}{{housekeeper.name}}{{else}}<a href="/tasks?roomId={{room.id}}" class="link">Assign…</a>{{/if}}</td>
+            <td>{{taskBadge this}}{{#if (eq status "DONE")}}<div class="mt-0.5 text-[11px] text-moss">pending verification</div>{{/if}}</td>
+            <td class="whitespace-nowrap">{{#if housekeeper}}{{formatDate (fallback assignedAt createdAt)}}<div class="text-xs text-moss">by {{fallback admin.name "—"}}</div>{{else}}<span class="muted">not yet</span><div class="text-xs text-moss">created {{formatDate createdAt}}</div>{{/if}}</td>
             <td class="whitespace-nowrap">{{minutesBetween startedAt completedAt}}</td>
           </tr>
           {{else}}<tr><td colspan="7" class="py-10 text-center text-moss">No tasks.</td></tr>{{/each}}

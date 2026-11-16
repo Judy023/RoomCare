@@ -37,20 +37,25 @@ import {
   assignWo, startWo, holdWo, resumeWo, logWoParts, resolveWo, cancelWo,
 } from "../controllers/workOrderController.js";
 import { inspectionsPage, newInspectionPage, createInspection } from "../controllers/inspectionController.js";
-import { reportsPage, workOrdersCsvExport } from "../controllers/reportController.js";
+import { reportsPage, workOrdersCsvExport, jobLogsCsvExport } from "../controllers/reportController.js";
 import { notificationsPage, openNotification, readAllNotifications } from "../controllers/notificationController.js";
 import { inventoryPage, createItemAction, updateItemAction, restockItemAction } from "../controllers/inventoryController.js";
 import {
   usersPage, createUserAction, updateUserAction, roomsPage, createRoomAction, updateRoomAction, deleteRoomAction, logsPage,
+  integrationsPage, retryIntegrationAction,
 } from "../controllers/adminController.js";
 import {
   apiRooms, apiTaskStatus, apiCreateWorkOrder, apiNotifications, apiSendNotification, pmsWebhook,
+  hrJobLogs, hrAcknowledge, hrWorkSummary,
 } from "../controllers/apiController.js";
 
 const router = express.Router();
 
-// PMS webhook authenticates with its own token, not a session.
+// PMS webhook and HR/Payroll API authenticate with their own tokens, not a session.
 router.post("/api/pms/events", pmsWebhook);
+router.get("/api/hr/job-logs", hrJobLogs);
+router.post("/api/hr/job-logs/ack", hrAcknowledge);
+router.get("/api/hr/work-summary", hrWorkSummary);
 
 router.use(loadUser);
 
@@ -111,6 +116,7 @@ router.post("/inventory/:id/restock", admin, restockItemAction);
 // Reports
 router.get("/reports", admin, reportsPage);
 router.get("/reports/work-orders.csv", admin, workOrdersCsvExport);
+router.get("/reports/housekeeping-jobs.csv", admin, jobLogsCsvExport);
 
 // Notifications
 router.get("/notifications", notificationsPage);
@@ -126,6 +132,8 @@ router.post("/admin/rooms", admin, createRoomAction);
 router.post("/admin/rooms/:id", admin, updateRoomAction);
 router.post("/admin/rooms/:id/delete", admin, deleteRoomAction);
 router.get("/admin/logs", admin, logsPage);
+router.get("/admin/integrations", admin, integrationsPage);
+router.post("/admin/integrations/:id/retry", admin, retryIntegrationAction);
 
 // JSON API for the mobile/PWA clients (session auth)
 router.get("/api/rooms", apiRooms);

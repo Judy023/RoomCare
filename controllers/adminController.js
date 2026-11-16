@@ -3,6 +3,9 @@ import { listRooms, createRoom, updateRoom, deleteRoom } from "../services/roomS
 import { listLogs } from "../services/logService.js";
 import { ROLES, ADMIN_ROOM_STATUSES, ROOM_TYPES } from "../models/enums.js";
 import { wrap, toPlain } from "../utils/http.js";
+import { integrationOverview, retryEvent } from "../services/pmsIntegrationService.js";
+import { hrExportStats } from "../services/hrExportService.js";
+import { integrationConfigSummary } from "../config/integrations.js";
 
 export const usersPage = wrap(async (req, res) => {
   res.render("admin/users", { title: "Manage Users", users: toPlain(await listUsers()), roles: ROLES });
@@ -46,4 +49,24 @@ export const deleteRoomAction = wrap(async (req, res) => {
 
 export const logsPage = wrap(async (req, res) => {
   res.render("admin/logs", { title: "System Logs", logs: toPlain(await listLogs()) });
+});
+
+// PMS and HR/Payroll integration status: configuration (never the secrets), recent events, failed syncs.
+export const integrationsPage = wrap(async (req, res) => {
+  const [overview, hr] = await Promise.all([integrationOverview(), hrExportStats()]);
+  res.render("admin/integrations", {
+    title: "Integrations",
+    config: integrationConfigSummary(),
+    events: toPlain(overview.recent),
+    failed: overview.failed,
+    waiting: overview.waiting,
+    hr: { ...hr, lastBatches: toPlain(hr.lastBatches) },
+  });
+});
+
+export const retryIntegrationAction = wrap(async (req, res) => {
+  const event = await retryEvent(req.params.id, req.user);
+  if (event.status === "SENT") req.flash("success_msg", `${event.eventType} ${event.eventId} delivered.`);
+  else req.flash("error_msg", `${event.eventType} ${event.eventId} still failing: ${event.lastError}`);
+  res.redirect("/admin/integrations");
 });

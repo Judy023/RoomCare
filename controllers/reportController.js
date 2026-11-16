@@ -1,4 +1,5 @@
 import { kpis, workOrdersCsv } from "../services/reportService.js";
+import { jobLogsCsv } from "../services/hrExportService.js";
 import { wrap } from "../utils/http.js";
 
 const PERIODS = [7, 30, 90];
@@ -14,4 +15,12 @@ export const workOrdersCsvExport = wrap(async (req, res) => {
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="roomcare-work-orders-${days}d.csv"`);
   res.send(await workOrdersCsv(days));
+});
+
+// Completed housekeeping job logs (the same records the HR/Payroll API provides).
+export const jobLogsCsvExport = wrap(async (req, res) => {
+  const days = periodFrom(req.query);
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="roomcare-housekeeping-jobs-${days}d.csv"`);
+  res.send(await jobLogsCsv(days));
 });

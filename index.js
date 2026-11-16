@@ -23,11 +23,13 @@
     SOFTWARE.
     */
     
+import "./config/env.js";
 import express from "express";
 import path from "path";
 import session from "express-session";
 import flash from "connect-flash";
 import router from "./routes/index.js";
+import { startIntegrationWorker } from "./services/pmsIntegrationService.js";
 import fs from 'fs';
 import hbs from "hbs";
 import "./helpers/hbs.js";
@@ -127,6 +129,7 @@ export const startServer = (port = PORT) => {
   return new Promise((resolve, reject) => {
     const server = app.listen(port, () => {
       console.log(`🔥 XianFire running at http://localhost:${port}`);
+      startIntegrationWorker();
       resolve(server);
     });
     server.on("error", reject);

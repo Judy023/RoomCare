@@ -2,6 +2,9 @@ import { pendingRooms, listInspections, inspectionContext, recordInspection } fr
 import { INSPECTION_CHECKLIST } from "../models/enums.js";
 import { wrap, toPlain, AppError } from "../utils/http.js";
 
+// Only local paths, so the "back" value cannot send anyone to another site.
+const safeBack = (p) => (typeof p === "string" && /^\/(?!\/)[\w\-/?=&%.]*$/.test(p) ? p : "/inspections");
+
 export const inspectionsPage = wrap(async (req, res) => {
   const [pending, recent] = await Promise.all([pendingRooms(), listInspections()]);
   res.render("inspections/index", {
@@ -12,7 +15,9 @@ export const inspectionsPage = wrap(async (req, res) => {
 export const newInspectionPage = wrap(async (req, res) => {
   if (!req.query.roomId) throw new AppError("Choose a room to inspect from the Inspections page.");
   const { room, state, lastTask, resolvedWos } = await inspectionContext(req.query.roomId);
-  res.render("inspections/new", {
+  // ?modal=1 → just the form, loaded into the inspection modal (partials/inspectDialog).
+  res.render(req.query.modal === "1" ? "inspections/form" : "inspections/new", {
+    back: safeBack(req.query.back),
     title: `Inspect Room ${room.roomNo}`,
     room: toPlain(room), state, lastTask: toPlain(lastTask), resolvedWos: toPlain(resolvedWos),
     checklist: INSPECTION_CHECKLIST,
@@ -32,5 +37,5 @@ export const createInspection = wrap(async (req, res) => {
     if (!outcome.reopenedTask && !outcome.reopenedWos.length && !outcome.needsNewTask) parts.push("Report any new fault as a work order.");
     req.flash("error_msg", parts.join(" "));
   }
-  res.redirect("/inspections");
+  res.redirect(safeBack(req.body.back));
 });

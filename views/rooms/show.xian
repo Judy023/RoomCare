@@ -3,7 +3,7 @@
 <div class="page-header mt-3">
   <div>
     <h1 class="page-title flex flex-wrap items-center gap-3">Room {{room.roomNo}} {{badge room.status}}</h1>
-    <p class="page-sub">{{room.type}} · Floor {{room.floor}}{{#if room.notes}} · {{room.notes}}{{/if}}</p>
+    <p class="page-sub">{{room.type}} · Floor {{room.floor}}{{#if room.notes}} · {{room.notes}}{{/if}}{{#if room.pmsStatus}} · PMS: <b>{{label room.pmsStatus}}</b> <span class="text-xs">({{formatDate room.pmsStatusAt}})</span>{{/if}}</p>
   </div>
   <div class="flex flex-wrap gap-2">
     {{#if canCheckInOut}}
@@ -11,7 +11,7 @@
       {{#if (eq room.status "INSPECTED")}}<form method="POST" action="/rooms/{{room.id}}/done-inspecting"><button class="btn">Done inspecting</button></form>{{/if}}
     {{/if}}
     {{#if canAssign}}<a href="/tasks?roomId={{room.id}}" class="btn-secondary">Assign task</a>{{/if}}
-    {{#if canInspect}}<a href="/inspections/new?roomId={{room.id}}" class="btn">Inspect room</a>{{/if}}  </div>
+    {{#if canInspect}}<a href="/inspections/new?roomId={{room.id}}" class="btn js-inspect">Inspect room</a>{{/if}}  </div>
 </div>
 
 <div class="grid gap-5 lg:grid-cols-2">
@@ -21,7 +21,7 @@
       <thead><tr><th>Code</th><th>Task</th><th>Housekeeper</th><th>Status</th><th>Done</th></tr></thead>
       <tbody>
         {{#each room.tasks}}
-        <tr><td class="whitespace-nowrap">{{code}}</td><td>{{title}} {{priorityBadge priority}}</td><td>{{housekeeper.name}}</td><td>{{badge status}}</td><td class="whitespace-nowrap">{{formatDate completedAt}}</td></tr>
+        <tr><td class="whitespace-nowrap">{{code}}</td><td>{{title}} {{priorityBadge priority}}</td><td>{{fallback housekeeper.name "Unassigned"}}</td><td>{{taskBadge this}}</td><td class="whitespace-nowrap">{{formatDate completedAt}}</td></tr>
         {{else}}<tr><td colspan="5" class="py-8 text-center text-moss">No tasks yet.</td></tr>{{/each}}
       </tbody>
     </table>
@@ -51,4 +51,5 @@
     </table>
   </section>
 </div>
+{{> inspectDialog}}
 {{> footer}}

@@ -1,5 +1,5 @@
 import hbs from "hbs";
-import { ROLE_LABELS, TASK_TYPES } from "../models/enums.js";
+import { ROLE_LABELS, TASK_TYPES, housekeepingStatus } from "../models/enums.js";
 
 const { SafeString, Utils } = hbs.handlebars;
 const esc = Utils.escapeExpression;
@@ -62,6 +62,7 @@ const ICON_PATHS = {
   "/admin/users": '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>',
   "/admin/rooms": '<path d="M3 7h18v13H3z"/><path d="M3 12h18M9 7v13"/>',
   "/admin/logs": '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+  "/admin/integrations": '<path d="M7 7h10M7 7l3-3M7 7l3 3"/><path d="M17 17H7M17 17l-3-3M17 17l-3 3"/>',
 };
 const navIcon = (href) =>
   new SafeString('<svg class="h-[18px] w-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICON_PATHS[href] || '<circle cx="12" cy="12" r="3"/>') + "</svg>");
@@ -117,6 +118,14 @@ const helpers = {
   },
   minutesBetween: (a, b) => (a && b ? `${Math.round((new Date(b) - new Date(a)) / 60000)} min` : "—"),
   fallback: (v, alt) => (v == null || v === "" ? alt : v),
+  // Housekeeping status of a cleaning task (Pending Cleaning, Assigned, Cleaning In Progress, ...).
+  taskBadge: (task) => {
+    const text = housekeepingStatus(task);
+    const tone = { "Pending Cleaning": T.danger, Assigned: T.warn, "Cleaning In Progress": T.info, "Cleaning Completed": T.ok, Verified: T.ok }[text] || T.neutral;
+    return pill(tone, text);
+  },
+  integrationBadge: (status) => pill({ PROCESSED: T.ok, SENT: T.ok, PENDING: T.warn, SENDING: T.info, FAILED: T.danger, REJECTED: T.danger }[status] || T.neutral, label(status)),
+  json: (v) => (v == null ? "" : JSON.stringify(v)),
   nl2br: (text) => new SafeString(esc(text || "").replace(/\n/g, "<br>")),
 };
 

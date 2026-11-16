@@ -1,8 +1,8 @@
 import { LANDING } from "../middleware/auth.js";
 import { board } from "../services/roomService.js";
-import { roomsNeedingTask, listTasks } from "../services/taskService.js";
+import { vacantDirtyRooms, listTasks } from "../services/taskService.js";
 import { listWorkOrders } from "../services/workOrderService.js";
-import { pendingRooms } from "../services/inspectionService.js";
+import { inspectionQueue, awaitingCheckout } from "../services/inspectionService.js";
 import { lowStockItems } from "../services/inventoryService.js";
 import { TaskStatus, WorkOrderStatus } from "../models/enums.js";
 import { wrap, toPlain } from "../utils/http.js";
@@ -12,13 +12,14 @@ export const dashboardPage = wrap(async (req, res) => {
   const role = req.user.role;
   if (role !== "admin") return res.redirect(LANDING[role] || "/login");
 
-  const [roomBoard, needTask, inProgress, openWos, onHold, toInspect, lowStock] = await Promise.all([
+  const [roomBoard, needTask, inProgress, openWos, onHold, toInspect, needCheckout, lowStock] = await Promise.all([
     board(),
-    roomsNeedingTask(),
+    vacantDirtyRooms(),
     listTasks({ status: TaskStatus.IN_PROGRESS }),
     listWorkOrders({ status: WorkOrderStatus.OPEN }),
     listWorkOrders({ status: WorkOrderStatus.ON_HOLD }),
-    pendingRooms(),
+    inspectionQueue(),
+    awaitingCheckout(),
     lowStockItems(),
   ]);
   res.render("dashboard", {
@@ -29,7 +30,8 @@ export const dashboardPage = wrap(async (req, res) => {
     inProgress: toPlain(inProgress),
     openWos,
     onHold,
-    toInspect: toPlain(toInspect),
+    toInspect,
+    needCheckout: toPlain(needCheckout),
     lowStock: toPlain(lowStock),
   });
 });
