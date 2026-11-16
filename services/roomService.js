@@ -92,6 +92,22 @@ export const checkOut = async (room, userId, source = "Admin") => {
   return room;
 };
 
+// Admin finishes with an inspected room: INSPECTED → VACANT_DIRTY so it can go straight to a housekeeper
+// (no guest check-in / check-out cycle needed).
+export const doneInspecting = async (room, userId) => {
+  if (room.status !== RoomStatus.INSPECTED) {
+    throw new AppError(`Room ${room.roomNo} is not inspected (it is ${label(room.status)}).`);
+  }
+  await setStatus(room, RoomStatus.VACANT_DIRTY, userId, "done inspecting");
+  await notifyRoles("admin", {
+    channel: "PUSH",
+    title: `Room ${room.roomNo} ready for cleaning`,
+    message: `Room ${room.roomNo} (${room.type}) is vacant dirty and needs a cleaning task.`,
+    link: `/tasks?roomId=${room.id}`,
+  });
+  return room;
+};
+
 // Only rooms that passed inspection are sellable and can be given to the next guest.
 export const checkIn = async (room, userId, source = "Admin") => {
   if (room.status !== RoomStatus.INSPECTED) {

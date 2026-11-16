@@ -30,7 +30,7 @@ import { handlePhotoUpload } from "../middleware/upload.js";
 import { homePage } from "../controllers/homeController.js";
 import { loginPage, registerPage, registerUser, forgotPasswordPage, loginUser, logoutUser } from "../controllers/authController.js";
 import { dashboardPage } from "../controllers/dashboardController.js";
-import { boardPage, roomPage, checkOutRoom, checkInRoom } from "../controllers/roomController.js";
+import { boardPage, roomPage, checkOutRoom, checkInRoom, doneInspectingRoom } from "../controllers/roomController.js";
 import { tasksPage, createTask, myTasksPage, startMyTask, completeMyTask } from "../controllers/taskController.js";
 import {
   workOrdersPage, myWorkOrdersPage, newWorkOrderPage, createWorkOrder, workOrderPage,
@@ -74,6 +74,7 @@ router.get("/rooms", admin, boardPage);
 router.get("/rooms/:id", admin, roomPage);
 router.post("/rooms/:id/checkout", admin, checkOutRoom);
 router.post("/rooms/:id/checkin", admin, checkInRoom);
+router.post("/rooms/:id/done-inspecting", admin, doneInspectingRoom);
 
 // Cleaning tasks
 router.get("/tasks", admin, tasksPage);

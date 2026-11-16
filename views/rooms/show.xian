@@ -8,7 +8,7 @@
   <div class="flex flex-wrap gap-2">
     {{#if canCheckInOut}}
       {{#if (eq room.status "OCCUPIED")}}<form method="POST" action="/rooms/{{room.id}}/checkout"><button class="btn-secondary">Check out guest</button></form>{{/if}}
-      {{#if (eq room.status "INSPECTED")}}<form method="POST" action="/rooms/{{room.id}}/checkin"><button class="btn">Assign to guest</button></form>{{/if}}
+      {{#if (eq room.status "INSPECTED")}}<form method="POST" action="/rooms/{{room.id}}/done-inspecting"><button class="btn">Done inspecting</button></form>{{/if}}
     {{/if}}
     {{#if canAssign}}<a href="/tasks?roomId={{room.id}}" class="btn-secondary">Assign task</a>{{/if}}
     {{#if canInspect}}<a href="/inspections/new?roomId={{room.id}}" class="btn">Inspect room</a>{{/if}}  </div>

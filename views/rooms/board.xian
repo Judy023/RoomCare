@@ -38,8 +38,8 @@
         </form>
         {{/if}}
         {{#if (eq status "INSPECTED")}}
-        <form method="POST" action="/rooms/{{id}}/checkin" class="mt-2">
-          <button class="btn btn-sm w-full">Assign guest</button>
+        <form method="POST" action="/rooms/{{id}}/done-inspecting" class="mt-2">
+          <button class="btn btn-sm w-full">Done inspecting</button>
         </form>
         {{/if}}
       {{/if}}
