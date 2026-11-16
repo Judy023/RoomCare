@@ -25,8 +25,8 @@ export const seedDatabase = async () => {
   // ── Users ────────────────────────────────────────────────────────────────
   const mkUser = (name, email, role, extra = {}) => User.create({ name, email, role, password, ...extra });
   const admin = await mkUser("System Admin", "admin@roomcare.local", "admin", { staffCode: "ADM-001" });
-  await mkUser("Liza Mendoza", "liza.mendoza@roomcare.local", "supervisor", { staffCode: "SUP-004", shift: "AM", phone: "+63 917 555 0104" });
-  await mkUser("Mark Reyes", "mark.reyes@roomcare.local", "supervisor", { staffCode: "SUP-005", shift: "PM", phone: "+63 917 555 0105" });
+  await mkUser("Liza Mendoza", "liza.mendoza@roomcare.local", "admin", { staffCode: "ADM-004", shift: "AM", phone: "+63 917 555 0104" });
+  await mkUser("Mark Reyes", "mark.reyes@roomcare.local", "admin", { staffCode: "ADM-005", shift: "PM", phone: "+63 917 555 0105" });
   await mkUser("Carlo Dizon", "carlo.dizon@roomcare.local", "housekeeper", { staffCode: "HK-021", shift: "AM", floor: 3, phone: "+63 917 555 0121" });
   await mkUser("Ana Santos", "ana.santos@roomcare.local", "housekeeper", { staffCode: "HK-022", shift: "AM", floor: 2, phone: "+63 917 555 0122" });
   await mkUser("Jerome Cruz", "jerome.cruz@roomcare.local", "housekeeper", { staffCode: "HK-023", shift: "AM", floor: 1, phone: "+63 917 555 0123" });

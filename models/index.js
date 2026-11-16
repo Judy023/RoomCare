@@ -10,7 +10,8 @@ import { Inspection } from "./inspectionModel.js";
 import { Notification } from "./notificationModel.js";
 import { SystemLog } from "./systemLogModel.js";
 
-// Supervisor assigns, Housekeeper performs, CleaningTask is for a Room
+// Admin assigns, Housekeeper performs, CleaningTask is for a Room
+// (the assigning admin is stored in the existing supervisorId column / "supervisor" alias, kept for data compatibility)
 Room.hasMany(CleaningTask, { as: "tasks", foreignKey: "roomId" });
 CleaningTask.belongsTo(Room, { as: "room", foreignKey: "roomId" });
 User.hasMany(CleaningTask, { as: "assignedTasks", foreignKey: "housekeeperId" });
@@ -31,7 +32,7 @@ InventoryItem.hasMany(PartUsage, { as: "usages", foreignKey: "itemId" });
 PartUsage.belongsTo(InventoryItem, { as: "item", foreignKey: "itemId" });
 PartUsage.belongsTo(User, { as: "technician", foreignKey: "technicianId" });
 
-// Supervisor conducts an Inspection of the Room
+// Admin conducts an Inspection of the Room (stored in the existing supervisorId column)
 Room.hasMany(Inspection, { as: "inspections", foreignKey: "roomId" });
 Inspection.belongsTo(Room, { as: "room", foreignKey: "roomId" });
 Inspection.belongsTo(User, { as: "supervisor", foreignKey: "supervisorId" });

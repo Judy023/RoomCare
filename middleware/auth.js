@@ -3,15 +3,15 @@ import { isApi } from "../utils/http.js";
 import { unreadCount } from "../services/notificationService.js";
 
 const NAV = [
-  { href: "/dashboard", label: "Overview", roles: ["supervisor", "admin"] },
+  { href: "/dashboard", label: "Overview", roles: ["admin"] },
   { href: "/tasks/my", label: "My Tasks", roles: ["housekeeper"] },
   { href: "/work-orders/my", label: "My Work Orders", roles: ["technician"] },
-  { href: "/rooms", label: "Room Board", roles: ["supervisor", "admin"] },
-  { href: "/tasks", label: "Cleaning Tasks", roles: ["supervisor", "admin"] },
-  { href: "/work-orders", label: "Work Orders", roles: ["supervisor", "admin", "technician"] },
-  { href: "/work-orders/new", label: "Report Issue", roles: ["housekeeper", "technician", "supervisor"] },
-  { href: "/inspections", label: "Inspections", roles: ["supervisor", "admin"] },
-  { href: "/inventory", label: "Inventory", roles: ["supervisor", "technician", "admin"] },
+  { href: "/rooms", label: "Room Board", roles: ["admin"] },
+  { href: "/tasks", label: "Cleaning Tasks", roles: ["admin"] },
+  { href: "/work-orders", label: "Work Orders", roles: ["admin", "technician"] },
+  { href: "/work-orders/new", label: "Report Issue", roles: ["housekeeper", "technician", "admin"] },
+  { href: "/inspections", label: "Inspections", roles: ["admin"] },
+  { href: "/inventory", label: "Inventory", roles: ["technician", "admin"] },
   { href: "/reports", label: "Reports", roles: ["admin"] },
   { href: "/admin/users", label: "Users", roles: ["admin"] },
   { href: "/admin/rooms", label: "Rooms", roles: ["admin"] },
@@ -21,7 +21,6 @@ const NAV = [
 export const LANDING = {
   housekeeper: "/tasks/my",
   technician: "/work-orders/my",
-  supervisor: "/dashboard",
   admin: "/dashboard",
 };
 

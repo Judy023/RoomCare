@@ -14,13 +14,12 @@
 <div class="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
   {{#each counts}}
   {{#unless (hiddenStatus status)}}
-  <a href="/rooms?status={{status}}" class="group rounded-2xl border p-4 shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift sm:p-5 {{roomColor status}}">
+  <div class="rounded-2xl border p-4 shadow-soft sm:p-5 {{roomColor status}}">
     <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wider opacity-90">
       {{label status}}
-      <svg class="h-4 w-4 opacity-0 transition group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6"/></svg>
     </div>
     <div class="mt-2 font-display text-4xl font-semibold tabular-nums">{{count}}</div>
-  </a>
+  </div>
   {{/unless}}
   {{/each}}
 </div>

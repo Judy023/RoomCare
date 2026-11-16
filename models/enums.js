@@ -1,11 +1,10 @@
 // Shared vocabularies from the RoomCare class diagram (RoomStatus, TaskStatus, WorkOrderStatus, ...).
 
-export const ROLES = ["housekeeper", "supervisor", "technician", "admin"];
+export const ROLES = ["housekeeper", "technician", "admin"];
 // Roles a new user may pick on the public registration form; elevated roles are granted by the System Admin.
 export const SELF_REGISTER_ROLES = ["housekeeper", "technician"];
 export const ROLE_LABELS = {
   housekeeper: "Housekeeper",
-  supervisor: "Supervisor",
   technician: "Maintenance Technician",
   admin: "System Admin",
 };

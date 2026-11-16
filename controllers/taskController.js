@@ -46,6 +46,6 @@ export const startMyTask = wrap(async (req, res) => {
 
 export const completeMyTask = wrap(async (req, res) => {
   const task = await completeTask(req.params.id, req.user, req.body.notes);
-  req.flash("success_msg", `${task.code} marked done. Your supervisor has been notified.`);
+  req.flash("success_msg", `${task.code} marked done. An admin has been notified.`);
   res.redirect("/tasks/my");
 });

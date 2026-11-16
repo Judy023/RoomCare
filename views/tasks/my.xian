@@ -39,7 +39,7 @@
   <div class="card py-12 text-center md:col-span-2">
     <span class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-leaf-soft text-leaf"><svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></span>
     <p class="font-display text-xl font-semibold">No open tasks</p>
-    <p class="muted">You'll get a notification when your supervisor assigns a room.</p>
+    <p class="muted">You'll get a notification when an admin assigns a room.</p>
   </div>
   {{/each}}
 </div>

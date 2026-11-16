@@ -79,7 +79,7 @@ export const reportIssue = async ({ roomId, category, description, priority = "M
   // A guest is still in an occupied room, so it stays occupied and is flagged by the open work order.
   if (room.status !== RoomStatus.OCCUPIED) await setStatus(room, RoomStatus.OUT_OF_ORDER, user.id, `${wo.code} reported`);
   await logAction(user.id, "WO_REPORT", "WorkOrder", wo.id, `${wo.code} Room ${room.roomNo}: ${category} — ${wo.description}`);
-  await notifyRoles("supervisor", {
+  await notifyRoles("admin", {
     channel: "PUSH",
     title: `New issue in Room ${room.roomNo}`,
     message: `${wo.code} ${category} (${priority}): "${wo.description}" — reported by ${user.name}.`,
@@ -88,8 +88,8 @@ export const reportIssue = async ({ roomId, category, description, priority = "M
   return wo;
 };
 
-// 4.0 Assign Work Order (supervisor sets priority and picks a technician)
-export const assignWorkOrder = async (id, { technicianId, priority }, supervisor) => {
+// 4.0 Assign Work Order (admin sets priority and picks a technician)
+export const assignWorkOrder = async (id, { technicianId, priority }, admin) => {
   const wo = await getWorkOrder(id);
   if (![S.OPEN, S.ASSIGNED].includes(wo.status)) throw new AppError(`Only open or assigned work orders can be (re)assigned — ${wo.code} is ${label(wo.status)}.`);
   const tech = await User.findOne({ where: { id: technicianId || 0, role: "technician", active: true } });
@@ -102,7 +102,7 @@ export const assignWorkOrder = async (id, { technicianId, priority }, supervisor
   wo.status = S.ASSIGNED;
   wo.assignedAt = new Date();
   await wo.save();
-  await logAction(supervisor.id, "WO_ASSIGN", "WorkOrder", wo.id, `${wo.code} → ${tech.name} (${wo.priority})`);
+  await logAction(admin.id, "WO_ASSIGN", "WorkOrder", wo.id, `${wo.code} → ${tech.name} (${wo.priority})`);
   await notifyUser(tech, {
     channel: "SMS",
     title: `${wo.code} assigned to you`,
@@ -135,7 +135,7 @@ export const startWork = async (id, tech) => {
 export const putOnHold = async (id, tech, reason) => {
   const wo = await getTechWorkOrder(id, tech);
   await transition(wo, S.IN_PROGRESS, S.ON_HOLD, tech.id, "WO_HOLD", { holdReason: reason?.trim() || "Awaiting parts" });
-  await notifyRoles("supervisor", {
+  await notifyRoles("admin", {
     channel: "PUSH",
     title: `${wo.code} on hold`,
     message: `${tech.name} put ${wo.code} (Room ${wo.room.roomNo}) on hold: ${wo.holdReason}.`,
@@ -176,7 +176,7 @@ export const resolveWorkOrder = async (id, tech, notes) => {
   const wo = await getTechWorkOrder(id, tech);
   if (!notes?.trim()) throw new AppError("Describe what was done to resolve the issue.");
   await transition(wo, S.IN_PROGRESS, S.RESOLVED, tech.id, "WO_RESOLVE", { resolvedAt: new Date(), resolutionNotes: notes.trim() });
-  await notifyRoles("supervisor", {
+  await notifyRoles("admin", {
     channel: "PUSH",
     title: `${wo.code} resolved — inspect Room ${wo.room.roomNo}`,
     message: `${tech.name}: ${wo.resolutionNotes}`,
@@ -186,9 +186,9 @@ export const resolveWorkOrder = async (id, tech, notes) => {
 };
 
 // Duplicate reports go straight to Cancelled (state machine: markDuplicate).
-export const markDuplicate = async (id, supervisor, note) => {
+export const markDuplicate = async (id, admin, note) => {
   const wo = await getWorkOrder(id);
-  await transition(wo, [S.OPEN, S.ASSIGNED], S.CANCELLED, supervisor.id, "WO_CANCEL", {
+  await transition(wo, [S.OPEN, S.ASSIGNED], S.CANCELLED, admin.id, "WO_CANCEL", {
     resolutionNotes: `Cancelled as duplicate${note?.trim() ? `: ${note.trim()}` : ""}`, closedAt: new Date(),
   });
   if (wo.assignedToId) {

@@ -7,10 +7,10 @@ import { lowStockItems } from "../services/inventoryService.js";
 import { TaskStatus, WorkOrderStatus } from "../models/enums.js";
 import { wrap, toPlain } from "../utils/http.js";
 
-// Supervisors and admins get the turnover overview; every other role lands on its own work list.
+// Admins get the turnover overview; every other role lands on its own work list.
 export const dashboardPage = wrap(async (req, res) => {
   const role = req.user.role;
-  if (!["supervisor", "admin"].includes(role)) return res.redirect(LANDING[role] || "/login");
+  if (role !== "admin") return res.redirect(LANDING[role] || "/login");
 
   const [roomBoard, needTask, inProgress, openWos, onHold, toInspect, lowStock] = await Promise.all([
     board(),

@@ -65,7 +65,7 @@ export const roomsNeedingTask = async () => {
 };
 
 // 1.0 Assign Cleaning Tasks
-export const assignTask = async ({ roomId, housekeeperId, taskType, priority, notes, dueAt }, supervisor) => {
+export const assignTask = async ({ roomId, housekeeperId, taskType, priority, notes, dueAt }, admin) => {
   const room = await getRoom(roomId);
   const housekeeper = await User.findOne({ where: { id: housekeeperId || 0, role: "housekeeper", active: true } });
   if (!housekeeper) throw new AppError("Choose an active housekeeper.");
@@ -78,15 +78,15 @@ export const assignTask = async ({ roomId, housekeeperId, taskType, priority, no
   if (open) throw new AppError(`Room ${room.roomNo} already has an open task (${open.code}).`);
 
   const task = await CleaningTask.create({
-    code: await nextTaskCode(), roomId: room.id, housekeeperId: housekeeper.id, supervisorId: supervisor.id,
+    code: await nextTaskCode(), roomId: room.id, housekeeperId: housekeeper.id, supervisorId: admin.id,
     taskType, title: TASK_TYPES[taskType], priority, notes: notes?.trim() || null, dueAt: dueAt || null,
     status: TaskStatus.PENDING,
   });
-  await logAction(supervisor.id, "TASK_ASSIGN", "CleaningTask", task.id, `${task.code} Room ${room.roomNo} → ${housekeeper.name}`);
+  await logAction(admin.id, "TASK_ASSIGN", "CleaningTask", task.id, `${task.code} Room ${room.roomNo} → ${housekeeper.name}`);
   await notifyUser(housekeeper, {
     channel: "PUSH",
     title: `New task: Room ${room.roomNo}`,
-    message: `${task.title} (${priority}) assigned by ${supervisor.name}.${task.notes ? ` Note: ${task.notes}` : ""}`,
+    message: `${task.title} (${priority}) assigned by ${admin.name}.${task.notes ? ` Note: ${task.notes}` : ""}`,
     link: "/tasks/my",
   });
   return task;
@@ -126,7 +126,7 @@ export const completeTask = async (id, housekeeper, notes) => {
   if (room.status === RoomStatus.CLEANING) await setStatus(room, RoomStatus.VACANT_CLEAN, housekeeper.id, `${task.code} done`);
   await logAction(housekeeper.id, "TASK_DONE", "CleaningTask", task.id, task.code);
   if (room.status !== RoomStatus.OCCUPIED) {
-    await notifyRoles("supervisor", {
+    await notifyRoles("admin", {
       channel: "PUSH",
       title: `Room ${room.roomNo} cleaned`,
       message: `${housekeeper.name} completed ${task.code} (${task.title}). ${room.status === RoomStatus.OUT_OF_ORDER ? "Room is out of order until its repair is resolved." : "Ready for inspection."}`,

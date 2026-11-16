@@ -77,13 +77,13 @@ export const setStatus = async (room, status, userId, reason = "") => {
   return room;
 };
 
-// Admin / PMS check-out: OCCUPIED → VACANT_DIRTY, then supervisors are told to assign a cleaner.
+// Admin / PMS check-out: OCCUPIED → VACANT_DIRTY, then admins are told to assign a cleaner.
 export const checkOut = async (room, userId, source = "Admin") => {
   if (room.status !== RoomStatus.OCCUPIED) {
     throw new AppError(`Room ${room.roomNo} is not occupied (it is ${label(room.status)}).`);
   }
   await setStatus(room, RoomStatus.VACANT_DIRTY, userId, `check-out via ${source}`);
-  await notifyRoles("supervisor", {
+  await notifyRoles("admin", {
     channel: "PUSH",
     title: `Room ${room.roomNo} checked out`,
     message: `Room ${room.roomNo} (${room.type}) is vacant dirty and needs a cleaning task.`,

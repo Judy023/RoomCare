@@ -27,14 +27,14 @@ export const roomPage = wrap(async (req, res) => {
     title: `Room ${room.roomNo}`,
     room: toPlain(room),
     canCheckInOut: role === "admin",
-    canAssign: ["supervisor", "admin"].includes(role),
-    canInspect: ["supervisor", "admin"].includes(role) && (await inspectionState(room)).ok,
+    canAssign: role === "admin",
+    canInspect: role === "admin" && (await inspectionState(room)).ok,
   });
 });
 
 export const checkOutRoom = wrap(async (req, res) => {
   const room = await checkOut(await getRoom(req.params.id), req.user.id);
-  req.flash("success_msg", `Room ${room.roomNo} checked out — supervisors have been notified to assign cleaning.`);
+  req.flash("success_msg", `Room ${room.roomNo} checked out — admins have been notified to assign cleaning.`);
   res.redirect(req.get("Referer") || "/rooms");
 });
 

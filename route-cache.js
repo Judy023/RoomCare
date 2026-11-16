@@ -89,7 +89,7 @@ export const cacheRoute = ({ ttl = 60000, keyPrefix = "", filter = null } = {}) 
     if (req.method !== "GET") return next();
     if (filter && !filter(req)) return next();
 
-    const cacheKey = `${keyPrefix}${req.originalUrl}`;
+    const cacheKey = \`\${keyPrefix}\${req.originalUrl}\`;
     const cached = cacheStore.get(cacheKey);
 
     if (cached && Date.now() - cached.timestamp < ttl) {
@@ -208,12 +208,12 @@ const cacheController = {
   },
   clear: (req, res) => {
     const cleared = clearCache();
-    res.json({ success: true, message: `Cleared ${cleared} entries` });
+    res.json({ success: true, message: \`Cleared \${cleared} entries\` });
   },
   clearByPrefix: (req, res) => {
     const { prefix } = req.params;
     const cleared = clearCache(prefix);
-    res.json({ success: true, message: `Cleared ${cleared} entries matching "${prefix}"` });
+    res.json({ success: true, message: \`Cleared \${cleared} entries matching "\${prefix}"\` });
   }
 };
 

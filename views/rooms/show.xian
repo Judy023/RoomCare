@@ -42,7 +42,7 @@
   <section class="card overflow-x-auto p-0 lg:col-span-2">
     <h2 class="section-title px-5 pt-5 sm:px-6">Inspections</h2>
     <table class="table">
-      <thead><tr><th>Date</th><th>Supervisor</th><th>Result</th><th>Remarks</th></tr></thead>
+      <thead><tr><th>Date</th><th>Inspected by</th><th>Result</th><th>Remarks</th></tr></thead>
       <tbody>
         {{#each room.inspections}}
         <tr><td class="whitespace-nowrap">{{formatDate createdAt}}</td><td>{{supervisor.name}}</td><td>{{badge result}}</td><td>{{fallback remarks "—"}}</td></tr>

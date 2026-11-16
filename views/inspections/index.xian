@@ -79,7 +79,7 @@
 <section class="card overflow-x-auto p-0">
   <h2 class="section-title px-5 pt-5 sm:px-6">Recent inspections</h2>
   <table class="table">
-    <thead><tr><th>When</th><th>Room</th><th>Supervisor</th><th>Result</th><th>Failed items</th><th>Remarks</th></tr></thead>
+    <thead><tr><th>When</th><th>Room</th><th>Inspected by</th><th>Result</th><th>Failed items</th><th>Remarks</th></tr></thead>
     <tbody>
       {{#each recent}}
       <tr>

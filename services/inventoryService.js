@@ -21,7 +21,7 @@ export const getItem = async (id) => {
 // Low-stock alert (the queue worker's job in the deployment diagram).
 export const checkLowStock = async (item) => {
   if (item.quantity > item.reorderLevel) return;
-  await notifyRoles(["admin", "supervisor"], {
+  await notifyRoles("admin", {
     channel: "EMAIL",
     title: `Low stock: ${item.name}`,
     message: `${item.name} (${item.sku}) is down to ${item.quantity} ${item.unit}, at or below its reorder level of ${item.reorderLevel}. Supplier: ${item.supplier || "—"}.`,

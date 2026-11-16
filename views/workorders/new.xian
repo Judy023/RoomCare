@@ -3,7 +3,7 @@
   <div class="mb-6">
   <p class="eyebrow">Maintenance</p>
   <h1 class="page-title">Report a Maintenance Issue</h1>
-  <p class="page-sub">The room is set to <b>Out of Order</b> and the supervisor is notified right away.</p>
+  <p class="page-sub">The room is set to <b>Out of Order</b> and an admin is notified right away.</p>
   </div>
   <form method="POST" action="/work-orders" enctype="multipart/form-data" class="card space-y-5 sm:p-8">
     <input type="hidden" name="taskId" value="{{taskId}}">

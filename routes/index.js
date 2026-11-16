@@ -64,33 +64,32 @@ router.get("/logout", logoutUser);
 
 router.use(requireAuth);
 
-const supervisor = requireRole("supervisor", "admin");
-const boardViewers = requireRole("supervisor", "admin");
-const reporters = requireRole("housekeeper", "technician", "supervisor", "admin");
+const admin = requireRole("admin");
+const reporters = requireRole("housekeeper", "technician", "admin");
 
 router.get("/dashboard", dashboardPage);
 
 // Rooms / status board
-router.get("/rooms", boardViewers, boardPage);
-router.get("/rooms/:id", boardViewers, roomPage);
-router.post("/rooms/:id/checkout", requireRole("admin"), checkOutRoom);
-router.post("/rooms/:id/checkin", requireRole("admin"), checkInRoom);
+router.get("/rooms", admin, boardPage);
+router.get("/rooms/:id", admin, roomPage);
+router.post("/rooms/:id/checkout", admin, checkOutRoom);
+router.post("/rooms/:id/checkin", admin, checkInRoom);
 
 // Cleaning tasks
-router.get("/tasks", supervisor, tasksPage);
-router.post("/tasks", supervisor, createTask);
+router.get("/tasks", admin, tasksPage);
+router.post("/tasks", admin, createTask);
 router.get("/tasks/my", requireRole("housekeeper"), myTasksPage);
 router.post("/tasks/:id/start", requireRole("housekeeper"), startMyTask);
 router.post("/tasks/:id/complete", requireRole("housekeeper"), completeMyTask);
 
 // Work orders
-router.get("/work-orders", requireRole("supervisor", "admin", "technician"), workOrdersPage);
+router.get("/work-orders", requireRole("admin", "technician"), workOrdersPage);
 router.get("/work-orders/my", requireRole("technician"), myWorkOrdersPage);
 router.get("/work-orders/new", reporters, newWorkOrderPage);
 router.post("/work-orders", reporters, handlePhotoUpload, createWorkOrder);
-router.get("/work-orders/:id", requireRole("supervisor", "admin", "technician", "housekeeper"), workOrderPage);
-router.post("/work-orders/:id/assign", supervisor, assignWo);
-router.post("/work-orders/:id/cancel", supervisor, cancelWo);
+router.get("/work-orders/:id", requireRole("admin", "technician", "housekeeper"), workOrderPage);
+router.post("/work-orders/:id/assign", admin, assignWo);
+router.post("/work-orders/:id/cancel", admin, cancelWo);
 router.post("/work-orders/:id/start", requireRole("technician"), startWo);
 router.post("/work-orders/:id/hold", requireRole("technician"), holdWo);
 router.post("/work-orders/:id/resume", requireRole("technician"), resumeWo);
@@ -98,19 +97,19 @@ router.post("/work-orders/:id/parts", requireRole("technician"), logWoParts);
 router.post("/work-orders/:id/resolve", requireRole("technician"), resolveWo);
 
 // Inspections
-router.get("/inspections", supervisor, inspectionsPage);
-router.get("/inspections/new", supervisor, newInspectionPage);
-router.post("/inspections", supervisor, createInspection);
+router.get("/inspections", admin, inspectionsPage);
+router.get("/inspections/new", admin, newInspectionPage);
+router.post("/inspections", admin, createInspection);
 
 // Inventory
-router.get("/inventory", requireRole("supervisor", "technician", "admin"), inventoryPage);
-router.post("/inventory", requireRole("admin"), createItemAction);
-router.post("/inventory/:id", requireRole("admin"), updateItemAction);
-router.post("/inventory/:id/restock", requireRole("admin"), restockItemAction);
+router.get("/inventory", requireRole("technician", "admin"), inventoryPage);
+router.post("/inventory", admin, createItemAction);
+router.post("/inventory/:id", admin, updateItemAction);
+router.post("/inventory/:id/restock", admin, restockItemAction);
 
 // Reports
-router.get("/reports", requireRole("admin"), reportsPage);
-router.get("/reports/work-orders.csv", requireRole("admin"), workOrdersCsvExport);
+router.get("/reports", admin, reportsPage);
+router.get("/reports/work-orders.csv", admin, workOrdersCsvExport);
 
 // Notifications
 router.get("/notifications", notificationsPage);
@@ -118,7 +117,6 @@ router.post("/notifications/read-all", readAllNotifications);
 router.post("/notifications/:id/open", openNotification);
 
 // System admin
-const admin = requireRole("admin");
 router.get("/admin/users", admin, usersPage);
 router.post("/admin/users", admin, createUserAction);
 router.post("/admin/users/:id", admin, updateUserAction);
@@ -133,6 +131,6 @@ router.get("/api/rooms", apiRooms);
 router.patch("/api/tasks/:id/status", requireRole("housekeeper"), apiTaskStatus);
 router.post("/api/work-orders", reporters, handlePhotoUpload, apiCreateWorkOrder);
 router.get("/api/notifications", apiNotifications);
-router.post("/api/notifications", supervisor, apiSendNotification);
+router.post("/api/notifications", admin, apiSendNotification);
 
 export default router;

@@ -51,17 +51,17 @@ export const newWorkOrderPage = wrap(async (req, res) => {
 
 export const createWorkOrder = wrap(async (req, res) => {
   const wo = await reportIssue(req.body, req.user, req.file);
-  req.flash("success_msg", `${wo.code} reported — supervisors have been notified.`);
+  req.flash("success_msg", `${wo.code} reported — admins have been notified.`);
   res.redirect(req.user.role === "housekeeper" ? "/tasks/my" : `/work-orders/${wo.id}`);
 });
 
 export const workOrderPage = wrap(async (req, res) => {
   const wo = withSla(await getWorkOrder(req.params.id));
   const role = req.user.role;
-  const isSupervisor = ["supervisor", "admin"].includes(role);
+  const isAdmin = role === "admin";
   const mine = wo.assignedToId === req.user.id;
   const [technicians, items, roomState] = await Promise.all([
-    isSupervisor ? listStaff("technician") : [],
+    isAdmin ? listStaff("technician") : [],
     mine ? listItems() : [],
     inspectionState(wo.room),
   ]);
@@ -72,14 +72,14 @@ export const workOrderPage = wrap(async (req, res) => {
     items: toPlain(items),
     priorities: PRIORITIES,
     can: {
-      assign: isSupervisor && [S.OPEN, S.ASSIGNED].includes(wo.status),
-      cancel: isSupervisor && [S.OPEN, S.ASSIGNED].includes(wo.status),
+      assign: isAdmin && [S.OPEN, S.ASSIGNED].includes(wo.status),
+      cancel: isAdmin && [S.OPEN, S.ASSIGNED].includes(wo.status),
       start: mine && wo.status === S.ASSIGNED,
       hold: mine && wo.status === S.IN_PROGRESS,
       resume: mine && wo.status === S.ON_HOLD,
       logParts: mine && [S.IN_PROGRESS, S.ON_HOLD].includes(wo.status),
       resolve: mine && wo.status === S.IN_PROGRESS,
-      inspect: isSupervisor && wo.status === S.RESOLVED && roomState.ok,
+      inspect: isAdmin && wo.status === S.RESOLVED && roomState.ok,
     },
     timeline: [
       { label: "Reported", at: wo.reportedAt, by: wo.reportedBy?.name },
@@ -118,7 +118,7 @@ export const logWoParts = wrap(async (req, res) => {
 });
 export const resolveWo = wrap(async (req, res) => {
   const wo = await resolveWorkOrder(req.params.id, req.user, req.body.notes);
-  back(req, res, `${wo.code} resolved — the supervisor has been asked to inspect the room.`);
+  back(req, res, `${wo.code} resolved — an admin has been asked to inspect the room.`);
 });
 export const cancelWo = wrap(async (req, res) => {
   const wo = await markDuplicate(req.params.id, req.user, req.body.note);

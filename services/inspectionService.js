@@ -58,7 +58,7 @@ export const inspectionContext = async (roomId) => {
 };
 
 // 6.0 Inspect & Release Room. Every checklist item ticked = PASS.
-export const recordInspection = async (roomId, supervisor, { items, remarks }) => {
+export const recordInspection = async (roomId, admin, { items, remarks }) => {
   const { room, state, lastTask, resolvedWos } = await inspectionContext(roomId);
   if (!state.ok) throw new AppError(state.reason);
 
@@ -68,15 +68,15 @@ export const recordInspection = async (roomId, supervisor, { items, remarks }) =
   const result = failed.length ? InspectionResult.FAIL : InspectionResult.PASS;
 
   const inspection = await Inspection.create({
-    roomId: room.id, supervisorId: supervisor.id, taskId: lastTask?.id ?? null, result, checklist, remarks: remarks?.trim() || null,
+    roomId: room.id, supervisorId: admin.id, taskId: lastTask?.id ?? null, result, checklist, remarks: remarks?.trim() || null,
   });
   const now = new Date();
 
   if (result === InspectionResult.PASS) {
-    await setStatus(room, RoomStatus.INSPECTED, supervisor.id, "inspection passed");
+    await setStatus(room, RoomStatus.INSPECTED, admin.id, "inspection passed");
     await CleaningTask.update({ status: TaskStatus.INSPECTED, inspectedAt: now }, { where: { roomId: room.id, status: TaskStatus.DONE } });
     for (const wo of resolvedWos) await wo.update({ status: WorkOrderStatus.CLOSED, closedAt: now });
-    await logAction(supervisor.id, "INSPECTION_PASS", "Room", room.id, `Room ${room.roomNo} released${resolvedWos.length ? `, closed ${resolvedWos.map((w) => w.code).join(", ")}` : ""}`);
+    await logAction(admin.id, "INSPECTION_PASS", "Room", room.id, `Room ${room.roomNo} released${resolvedWos.length ? `, closed ${resolvedWos.map((w) => w.code).join(", ")}` : ""}`);
     return { inspection, result };
   }
 
@@ -105,13 +105,13 @@ export const recordInspection = async (roomId, supervisor, { items, remarks }) =
     await notifyUser(lastTask.housekeeperId, {
       channel: "PUSH",
       title: `Touch-up needed: Room ${room.roomNo}`,
-      message: `${supervisor.name} sent ${lastTask.code} back: ${failedLabels}.`,
+      message: `${admin.name} sent ${lastTask.code} back: ${failedLabels}.`,
       link: "/tasks/my",
     });
   }
 
-  if (reopened.length) await setStatus(room, RoomStatus.OUT_OF_ORDER, supervisor.id, "inspection failed, repair reopened");
-  else if (failedCleaning) await setStatus(room, RoomStatus.VACANT_DIRTY, supervisor.id, "inspection failed, needs re-clean");
-  await logAction(supervisor.id, "INSPECTION_FAIL", "Room", room.id, `Room ${room.roomNo}: ${failedLabels}`);
+  if (reopened.length) await setStatus(room, RoomStatus.OUT_OF_ORDER, admin.id, "inspection failed, repair reopened");
+  else if (failedCleaning) await setStatus(room, RoomStatus.VACANT_DIRTY, admin.id, "inspection failed, needs re-clean");
+  await logAction(admin.id, "INSPECTION_FAIL", "Room", room.id, `Room ${room.roomNo}: ${failedLabels}`);
   return { inspection, result, reopenedTask: failedCleaning && lastTask ? lastTask : null, reopenedWos: reopened, needsNewTask: failedCleaning && !lastTask };
 };
