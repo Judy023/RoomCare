@@ -15,7 +15,7 @@ const INSPECTABLE = [RoomStatus.VACANT_CLEAN, RoomStatus.OUT_OF_ORDER];
 // A room can be inspected once it is cleaned and every repair on it has been resolved.
 export const inspectionState = async (room) => {
   if (!INSPECTABLE.includes(room.status)) {
-    return { ok: false, reason: `Room ${room.roomNo} must be vacant clean (or out of order with its repairs resolved) to be inspected.` };
+    return { ok: false, reason: `Room ${room.roomNo} must be clean (or out of order with its repairs resolved) to be inspected.` };
   }
   const openTask = await CleaningTask.findOne({ where: { roomId: room.id, status: ACTIVE_TASK_STATUSES } });
   if (openTask) return { ok: false, reason: `Room ${room.roomNo} still has an open cleaning task (${openTask.code}).` };

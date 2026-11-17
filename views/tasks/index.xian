@@ -14,7 +14,7 @@
       <label class="label" for="roomId">Room</label>
       <select id="roomId" name="roomId" class="input" required>
         <option value="">Select a room…</option>
-        {{#each rooms}}<option value="{{id}}" {{selected id @root.selectedRoomId}}>{{roomNo}} — {{type}}{{#unless (hiddenStatus status)}} ({{label status}}){{/unless}}</option>{{/each}}
+        {{#each rooms}}<option value="{{id}}" {{selected id @root.selectedRoomId}}>{{roomNo}} — {{type}}{{#unless (hiddenStatus status)}} ({{roomLabel status}}){{/unless}}</option>{{/each}}
       </select>
     </div>
     <div>
@@ -51,7 +51,7 @@
 
   <div class="space-y-5 lg:col-span-2">
     <section class="card">
-      <h2 class="section-title">Vacant dirty, not yet assigned <span class="count">{{needCleaning.length}}</span></h2>
+      <h2 class="section-title">Dirty rooms, not yet assigned <span class="count">{{needCleaning.length}}</span></h2>
       {{#if needCleaning.length}}
       <div class="flex flex-wrap gap-2">
         {{#each needCleaning}}

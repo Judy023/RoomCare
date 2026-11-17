@@ -28,7 +28,7 @@ export const createInspection = wrap(async (req, res) => {
   const outcome = await recordInspection(req.body.roomId, req.user, req.body);
   const roomNo = (await outcome.inspection.getRoom()).roomNo;
   if (outcome.result === "PASS") {
-    req.flash("success_msg", `Room ${roomNo} passed and is released (INSPECTED).`);
+    req.flash("success_msg", `Room ${roomNo} passed and is now a Vacant Room.`);
   } else {
     const parts = [`Room ${roomNo} failed inspection.`];
     if (outcome.reopenedTask) parts.push(`${outcome.reopenedTask.code} sent back to the housekeeper.`);

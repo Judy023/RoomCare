@@ -1,4 +1,4 @@
-import { board, roomDetail, getRoom, checkOut, checkIn, doneInspecting } from "../services/roomService.js";
+import { board, roomDetail, getRoom, checkOut, checkIn } from "../services/roomService.js";
 import { inspectionState } from "../services/inspectionService.js";
 import { ADMIN_ROOM_STATUSES } from "../models/enums.js";
 import { wrap, toPlain } from "../utils/http.js";
@@ -35,12 +35,6 @@ export const roomPage = wrap(async (req, res) => {
 export const checkOutRoom = wrap(async (req, res) => {
   const room = await checkOut(await getRoom(req.params.id), req.user.id);
   req.flash("success_msg", `Room ${room.roomNo} checked out — admins have been notified to assign cleaning.`);
-  res.redirect(req.get("Referer") || "/rooms");
-});
-
-export const doneInspectingRoom = wrap(async (req, res) => {
-  const room = await doneInspecting(await getRoom(req.params.id), req.user.id);
-  req.flash("success_msg", `Room ${room.roomNo} is now vacant dirty — assign it a cleaning task.`);
   res.redirect(req.get("Referer") || "/rooms");
 });
 

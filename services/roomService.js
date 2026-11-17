@@ -1,10 +1,10 @@
 import { Room, CleaningTask, WorkOrder, Inspection, User } from "../models/index.js";
-import { RoomStatus, ROOM_STATUSES, ADMIN_ROOM_STATUSES, ROOM_TYPES, ACTIVE_TASK_STATUSES, ACTIVE_WO_STATUSES, WorkOrderStatus } from "../models/enums.js";
+import { RoomStatus, roomStatusLabel, ROOM_STATUSES, ADMIN_ROOM_STATUSES, ROOM_TYPES, ACTIVE_TASK_STATUSES, ACTIVE_WO_STATUSES, WorkOrderStatus } from "../models/enums.js";
 import { AppError, toPlain } from "../utils/http.js";
 import { logAction } from "./logService.js";
 import { notifyRoles } from "./notificationService.js";
 
-const label = (s) => s.replace(/_/g, " ").toLowerCase();
+const label = roomStatusLabel;
 
 export const getRoom = async (id) => {
   const room = await Room.findByPk(id);
@@ -86,23 +86,7 @@ export const checkOut = async (room, userId, source = "Admin") => {
   await notifyRoles("admin", {
     channel: "PUSH",
     title: `Room ${room.roomNo} checked out`,
-    message: `Room ${room.roomNo} (${room.type}) is vacant dirty and needs a cleaning task.`,
-    link: `/tasks?roomId=${room.id}`,
-  });
-  return room;
-};
-
-// Admin finishes with an inspected room: INSPECTED → VACANT_DIRTY so it can go straight to a housekeeper
-// (no guest check-in / check-out cycle needed).
-export const doneInspecting = async (room, userId) => {
-  if (room.status !== RoomStatus.INSPECTED) {
-    throw new AppError(`Room ${room.roomNo} is not inspected (it is ${label(room.status)}).`);
-  }
-  await setStatus(room, RoomStatus.VACANT_DIRTY, userId, "done inspecting");
-  await notifyRoles("admin", {
-    channel: "PUSH",
-    title: `Room ${room.roomNo} ready for cleaning`,
-    message: `Room ${room.roomNo} (${room.type}) is vacant dirty and needs a cleaning task.`,
+    message: `Room ${room.roomNo} (${room.type}) is dirty and needs a cleaning task.`,
     link: `/tasks?roomId=${room.id}`,
   });
   return room;
@@ -111,7 +95,7 @@ export const doneInspecting = async (room, userId) => {
 // Only rooms that passed inspection are sellable and can be given to the next guest.
 export const checkIn = async (room, userId, source = "Admin") => {
   if (room.status !== RoomStatus.INSPECTED) {
-    throw new AppError(`Room ${room.roomNo} is not ready — only inspected rooms can be assigned to a guest (it is ${label(room.status)}).`);
+    throw new AppError(`Room ${room.roomNo} is not ready — only vacant rooms can be assigned to a guest (it is ${label(room.status)}).`);
   }
   return setStatus(room, RoomStatus.OCCUPIED, userId, `check-in via ${source}`);
 };

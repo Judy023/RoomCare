@@ -11,12 +11,12 @@
   </div>
 </div>
 
-<div class="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+<div class="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
   {{#each counts}}
-  {{#unless (hiddenStatus status)}}
+  {{#unless (hiddenSummaryStatus status)}}
   <div class="rounded-2xl border p-4 shadow-soft sm:p-5 {{roomColor status}}">
     <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wider opacity-90">
-      {{label status}}
+      {{roomLabel status}}
     </div>
     <div class="mt-2 font-display text-4xl font-semibold tabular-nums">{{count}}</div>
   </div>
@@ -43,7 +43,7 @@
       </li>
       {{/each}}
     </ul>
-    {{else}}<p class="empty">No vacant dirty rooms.</p>{{/if}}
+    {{else}}<p class="empty">No dirty rooms.</p>{{/if}}
   </section>
 
   <section class="card">
@@ -75,7 +75,7 @@
     <ul class="divide-y divide-line">
       {{#each toInspect}}
       <li class="list-row">
-        <span class="flex flex-wrap items-center gap-1.5"><b>Room {{roomNo}}</b> {{badge status}} {{#if resolved}}<span class="text-moss">· {{resolved}} repair(s) resolved</span>{{/if}}</span>
+        <span class="flex flex-wrap items-center gap-1.5"><b>Room {{roomNo}}</b> {{roomBadge status}} {{#if resolved}}<span class="text-moss">· {{resolved}} repair(s) resolved</span>{{/if}}</span>
         {{#if ready}}
         <a href="/inspections/new?roomId={{id}}" class="btn btn-sm js-inspect">Inspect</a>
         {{else}}
@@ -84,7 +84,7 @@
       </li>
       {{/each}}
     </ul>
-    {{else}}<p class="empty">No vacant clean rooms.</p>{{/if}}
+    {{else}}<p class="empty">No clean rooms.</p>{{/if}}
     {{#if needCheckout.length}}
     <div class="mt-5 rounded-xl border border-dashed border-gold/40 bg-gold-soft/50 p-4">
       <h3 class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gold-deep">Waiting for guest check-out · {{needCheckout.length}}</h3>

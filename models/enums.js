@@ -18,6 +18,16 @@ export const RoomStatus = {
   OUT_OF_ORDER: "OUT_OF_ORDER",
 };
 export const ROOM_STATUSES = Object.values(RoomStatus);
+// What staff see for each room status. Flow: Room Dirty → Cleaning → Room Clean → (admin inspection passes) → Vacant Room.
+export const ROOM_STATUS_LABELS = {
+  VACANT_DIRTY: "Room Dirty",
+  CLEANING: "Cleaning",
+  VACANT_CLEAN: "Room Clean",
+  INSPECTED: "Vacant Room",
+  OCCUPIED: "Occupied",
+  OUT_OF_ORDER: "Out Of Order",
+};
+export const roomStatusLabel = (s) => ROOM_STATUS_LABELS[s] || String(s || "").replace(/_/g, " ").toLowerCase();
 // Statuses a System Admin may set by hand. Occupied comes only from check-in, Out of Order only from a work order.
 export const ADMIN_ROOM_STATUSES = ROOM_STATUSES.filter((s) => ![RoomStatus.OCCUPIED, RoomStatus.OUT_OF_ORDER].includes(s));
 export const ROOM_TYPES = ["Standard Twin", "Deluxe King", "Family Room", "Junior Suite"];

@@ -1,5 +1,5 @@
 import hbs from "hbs";
-import { ROLE_LABELS, TASK_TYPES, housekeepingStatus } from "../models/enums.js";
+import { ROLE_LABELS, TASK_TYPES, housekeepingStatus, roomStatusLabel } from "../models/enums.js";
 
 const { SafeString, Utils } = hbs.handlebars;
 const esc = Utils.escapeExpression;
@@ -70,6 +70,8 @@ const navIcon = (href) =>
 // Room statuses that still drive the workflow but are never shown on screen.
 const HIDDEN_ROOM_STATUSES = ["OCCUPIED", "OUT_OF_ORDER"];
 const hiddenStatus = (v) => HIDDEN_ROOM_STATUSES.includes(v);
+// Statuses left out of the dashboard summary cards (the room board shows Vacant Room as a filter).
+const hiddenSummaryStatus = (v) => hiddenStatus(v) || v === "INSPECTED";
 
 const label = (v) => (v ? String(v).replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : "");
 const pad = (n) => String(n).padStart(2, "0");
@@ -90,6 +92,9 @@ const helpers = {
   roleLabel: (role) => ROLE_LABELS[role] || label(role),
   taskTypeLabel: (t) => TASK_TYPES[t] || label(t),
   hiddenStatus,
+  hiddenSummaryStatus,
+  roomLabel: (status) => roomStatusLabel(status),
+  roomBadge: (status) => hiddenStatus(status) ? "" : pill(STATUS_COLORS[status] || "bg-sage text-moss border-line", roomStatusLabel(status)),
   badge: (status) => hiddenStatus(status) ? "" : pill(STATUS_COLORS[status] || "bg-sage text-moss border-line", label(status)),
   priorityBadge: (p) => pill(PRIORITY_COLORS[p] || PRIORITY_COLORS.LOW, label(p)),
   roomColor: (status) => ROOM_COLORS[status] || "",

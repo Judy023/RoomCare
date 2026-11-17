@@ -12,7 +12,7 @@
   <div><label class="label">Room no.</label><input name="roomNo" class="input" required placeholder="409"></div>
   <div><label class="label">Type</label><select name="type" class="input">{{#each types}}<option>{{this}}</option>{{/each}}</select></div>
   <div><label class="label">Floor</label><input type="number" name="floor" min="0" class="input" required></div>
-  <div><label class="label">Initial status</label><select name="status" class="input">{{#each statuses}}<option value="{{this}}">{{label this}}</option>{{/each}}</select></div>
+  <div><label class="label">Initial status</label><select name="status" class="input">{{#each statuses}}<option value="{{this}}">{{roomLabel this}}</option>{{/each}}</select></div>
   <div class="flex items-end"><button class="btn w-full">Add room</button></div>
 </form>
 
@@ -25,7 +25,7 @@
         <td><form id="r{{id}}" method="POST" action="/admin/rooms/{{id}}"></form><a href="/rooms/{{id}}" class="font-display text-lg font-semibold text-forest hover:text-pine">{{roomNo}}</a></td>
         <td><select form="r{{id}}" name="type" class="input py-1">{{#each @root.types}}<option {{selected this ../type}}>{{this}}</option>{{/each}}</select></td>
         <td><input form="r{{id}}" type="number" name="floor" value="{{floor}}" min="0" class="input w-20 py-1"></td>
-        <td><select form="r{{id}}" name="status" class="input py-1">{{#each @root.statuses}}<option value="{{this}}" {{selected this ../status}}>{{label this}}</option>{{/each}}</select></td>
+        <td><select form="r{{id}}" name="status" class="input py-1">{{#each @root.statuses}}<option value="{{this}}" {{selected this ../status}}>{{roomLabel this}}</option>{{/each}}</select></td>
         <td><input form="r{{id}}" name="notes" value="{{notes}}" class="input py-1" placeholder="e.g. connecting room"></td>
         <td class="whitespace-nowrap">
           <div class="flex gap-1.5">

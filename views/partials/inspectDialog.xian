@@ -19,7 +19,7 @@
         const pass = boxes.every((b) => b.checked);
         verdict.className = "js-verdict " + (pass ? "notice-ok" : "notice-danger");
         verdict.innerHTML = pass
-          ? "Result: <b>PASS</b> — the room will be set to Inspected, and repairs closed."
+          ? "Result: <b>PASS</b> — the room becomes a Vacant Room, and repairs closed."
           : "Result: <b>FAIL</b> — unticked items send the room back.";
       };
       boxes.forEach((b) => b.addEventListener("change", update));

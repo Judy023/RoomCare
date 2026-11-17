@@ -3,7 +3,7 @@
 <div class="page-header mt-3">
   <div>
     <h1 class="page-title flex flex-wrap items-center gap-3">{{wo.code}} {{badge wo.status}} {{priorityBadge wo.priority}}</h1>
-    <p class="page-sub">Room <a href="/rooms/{{wo.room.id}}" class="link">{{wo.room.roomNo}}</a> ({{wo.room.type}}{{#unless (hiddenStatus wo.room.status)}}, {{label wo.room.status}}{{/unless}}) · {{wo.category}}</p>
+    <p class="page-sub">Room <a href="/rooms/{{wo.room.id}}" class="link">{{wo.room.roomNo}}</a> ({{wo.room.type}}{{#unless (hiddenStatus wo.room.status)}}, {{roomLabel wo.room.status}}{{/unless}}) · {{wo.category}}</p>
   </div>
   {{#unless (includes "CLOSED,CANCELLED" wo.status)}}
   <div class="{{#if wo.sla.overdue}}notice-danger{{else}}notice-ok{{/if}} font-medium">

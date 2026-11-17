@@ -2,7 +2,7 @@
 <div class="mx-auto max-w-2xl">
   <a href="/inspections" class="back-link">← Inspections</a>
   <div class="mb-6 mt-3">
-    <h1 class="page-title flex flex-wrap items-center gap-3">Inspect Room {{room.roomNo}} {{badge room.status}}</h1>
+    <h1 class="page-title flex flex-wrap items-center gap-3">Inspect Room {{room.roomNo}} {{roomBadge room.status}}</h1>
     <p class="page-sub">{{room.type}} · Floor {{room.floor}}</p>
   </div>
 
@@ -51,7 +51,7 @@
     const pass = boxes.every((b) => b.checked);
     verdict.className = pass ? "notice-ok" : "notice-danger";
     verdict.innerHTML = pass
-      ? "Result: <b>PASS</b> — the room will be set to Inspected, and repairs closed."
+      ? "Result: <b>PASS</b> — the room becomes a Vacant Room, and repairs closed."
       : "Result: <b>FAIL</b> — unticked items send the room back.";
   };
   boxes.forEach((b) => b.addEventListener("change", update));

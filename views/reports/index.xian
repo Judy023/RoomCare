@@ -29,7 +29,7 @@
     <h2 class="section-title">Room status (now)</h2>
     {{#each report.roomStatus}}
     <div class="mb-3 flex items-center gap-3 text-sm last:mb-0">
-      <span class="w-32 shrink-0 truncate text-moss">{{label key}}</span>
+      <span class="w-32 shrink-0 truncate text-moss">{{roomLabel key}}</span>
       <div class="bar"><span style="width: {{pct}}%"></span></div>
       <span class="w-8 text-right font-semibold tabular-nums">{{value}}</span>
     </div>

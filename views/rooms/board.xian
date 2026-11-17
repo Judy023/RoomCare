@@ -10,7 +10,7 @@
     <a href="/rooms" class="rounded-full border px-3.5 py-1.5 font-semibold transition {{#if status}}border-line bg-white text-moss hover:bg-sage{{else}}border-forest bg-forest text-white{{/if}}">All</a>
     {{#each board.counts}}
     {{#unless (hiddenStatus status)}}
-    <a href="/rooms?status={{status}}" class="rounded-full border px-3.5 py-1.5 font-semibold transition hover:shadow-soft {{roomColor status}} {{#if (eq status @root.status)}}ring-2 ring-forest ring-offset-2 ring-offset-ivory{{/if}}">{{label status}} <span class="ml-1 rounded-full bg-white/70 px-1.5 tabular-nums">{{count}}</span></a>
+    <a href="/rooms?status={{status}}" class="rounded-full border px-3.5 py-1.5 font-semibold transition hover:shadow-soft {{roomColor status}} {{#if (eq status @root.status)}}ring-2 ring-forest ring-offset-2 ring-offset-ivory{{/if}}">{{roomLabel status}} <span class="ml-1 rounded-full bg-white/70 px-1.5 tabular-nums">{{count}}</span></a>
     {{/unless}}
     {{/each}}
 </div>
@@ -27,7 +27,7 @@
           {{#if workOrders.length}}<span class="rounded-full bg-white/70 px-1.5 py-0.5 text-[11px] font-semibold" title="Work orders">🔧 {{workOrders.length}}</span>{{/if}}
         </div>
         <div class="mt-1 text-xs opacity-80">{{type}}</div>
-        <div class="mt-2 text-[11px] font-semibold uppercase tracking-wider">{{label status}}</div>
+        <div class="mt-2 text-[11px] font-semibold uppercase tracking-wider">{{roomLabel status}}</div>
         {{#each tasks}}<div class="mt-1 text-[11px]">🧹 {{fallback housekeeper.name "Unassigned"}} · {{label status}}</div>{{/each}}
         {{#each workOrders}}<div class="mt-0.5 text-[11px]">{{code}} · {{label status}}</div>{{/each}}
       </a>
@@ -35,11 +35,6 @@
         {{#if (eq status "OCCUPIED")}}
         <form method="POST" action="/rooms/{{id}}/checkout" class="mt-2" onsubmit="return confirm('Check out the guest in room {{roomNo}}?')">
           <button class="btn-secondary btn-sm w-full">Check out</button>
-        </form>
-        {{/if}}
-        {{#if (eq status "INSPECTED")}}
-        <form method="POST" action="/rooms/{{id}}/done-inspecting" class="mt-2">
-          <button class="btn btn-sm w-full">Done inspecting</button>
         </form>
         {{/if}}
       {{/if}}
