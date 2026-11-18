@@ -1,6 +1,7 @@
 import { board, roomDetail, getRoom, checkOut, checkIn } from "../services/roomService.js";
 import { inspectionState } from "../services/inspectionService.js";
-import { ADMIN_ROOM_STATUSES } from "../models/enums.js";
+import { assignFormOptions } from "../services/taskService.js";
+import { ADMIN_ROOM_STATUSES, RoomStatus, TaskStatus, ACTIVE_TASK_STATUSES } from "../models/enums.js";
 import { wrap, toPlain } from "../utils/http.js";
 
 export const boardPage = wrap(async (req, res) => {
@@ -23,11 +24,19 @@ export const boardPage = wrap(async (req, res) => {
 export const roomPage = wrap(async (req, res) => {
   const room = await roomDetail(req.params.id);
   const role = req.user.role;
+  // Rooms that still need cleaning (dirty, or a stayover for an occupied room) can be assigned; a pending task that
+  // already has a housekeeper can be reassigned. Not while someone is cleaning, nor once the room is clean.
+  const openTask = (room.tasks || []).find((t) => ACTIVE_TASK_STATUSES.includes(t.status));
+  const canAssign = role === "admin"
+    && [RoomStatus.VACANT_DIRTY, RoomStatus.OCCUPIED].includes(room.status)
+    && openTask?.status !== TaskStatus.IN_PROGRESS;
   res.render("rooms/show", {
     title: `Room ${room.roomNo}`,
     room: toPlain(room),
     canCheckInOut: role === "admin",
-    canAssign: role === "admin",
+    canAssign,
+    reassign: Boolean(openTask?.housekeeperId),
+    ...(canAssign ? await assignFormOptions() : {}),
     canInspect: role === "admin" && (await inspectionState(room)).ok,
   });
 });

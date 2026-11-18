@@ -75,17 +75,11 @@
 
   <aside class="space-y-5">
     {{#if can.assign}}
-    <form method="POST" action="/work-orders/{{wo.id}}/assign" class="card space-y-3">
-      <h2 class="section-title">{{#if wo.assignedTo}}Reassign{{else}}Assign technician{{/if}}</h2>
-      <select name="technicianId" class="input" required>
-        <option value="">Select technician…</option>
-        {{#each technicians}}<option value="{{id}}" {{selected id @root.wo.assignedToId}}>{{name}}{{#if specialty}} — {{specialty}}{{/if}}</option>{{/each}}
-      </select>
-      <select name="priority" class="input">
-        {{#each priorities}}<option value="{{this}}" {{selected this @root.wo.priority}}>{{label this}} priority</option>{{/each}}
-      </select>
-      <button class="btn w-full">Assign &amp; send SMS</button>
-    </form>
+    <section class="card space-y-3">
+      <h2 class="section-title">Technician</h2>
+      <p class="text-sm">{{#if wo.assignedTo}}<b>{{wo.assignedTo.name}}</b>{{#if wo.assignedTo.specialty}} <span class="muted">({{wo.assignedTo.specialty}})</span>{{/if}}{{else}}<span class="muted">Not assigned yet.</span>{{/if}}</p>
+      <button type="button" class="btn w-full js-open-wo-assign">{{#if wo.assignedTo}}Reassign{{else}}Assign technician{{/if}}</button>
+    </section>
     {{/if}}
 
     {{#if can.cancel}}
@@ -106,8 +100,11 @@
     {{#if can.resolve}}
     <form method="POST" action="/work-orders/{{wo.id}}/resolve" class="card space-y-2">
       <h2 class="section-title">Resolve</h2>
-      <textarea name="notes" rows="3" class="input" required placeholder="What did you fix? e.g. Replaced run capacitor, tested 30 min"></textarea>
-      <button class="btn w-full">Mark resolved</button>
+      {{#unless wo.parts.length}}
+      <p class="notice-warn px-4 py-3 text-sm">Log the parts you used under <b>Parts used</b> first — a repair can only be marked resolved once its parts are recorded. What you type below is kept.</p>
+      {{/unless}}
+      <textarea name="notes" rows="3" class="input js-resolve-notes" required placeholder="What did you fix? e.g. Replaced run capacitor, tested 30 min"></textarea>
+      <button class="btn w-full" {{#unless wo.parts.length}}disabled{{/unless}}>Mark resolved</button>
     </form>
     {{/if}}
 
@@ -134,5 +131,78 @@
     {{/if}}
   </aside>
 </div>
+{{#if can.assign}}
+<dialog id="wo-assign-modal" class="dialog max-w-lg" aria-labelledby="wo-assign-title">
+  <form method="POST" action="/work-orders/{{wo.id}}/assign" class="flex max-h-[85vh] flex-col">
+    <div class="flex items-start justify-between gap-3 border-b border-line px-6 py-5">
+      <div>
+        <h2 id="wo-assign-title" class="font-display text-xl font-semibold">{{#if wo.assignedTo}}Reassign{{else}}Assign technician{{/if}}</h2>
+        <p class="muted">{{wo.code}} · Room {{wo.room.roomNo}} · {{wo.category}}</p>
+      </div>
+      <button type="button" class="js-close-wo-assign icon-btn text-xl leading-none" aria-label="Close">×</button>
+    </div>
+    <div class="space-y-4 overflow-y-auto overscroll-contain px-6 py-5">
+      <div>
+        <label class="label" for="wo-assign-tech">Technician</label>
+        <select id="wo-assign-tech" name="technicianId" class="input" required>
+          <option value="">Select technician…</option>
+          {{#each technicians}}<option value="{{id}}" {{selected id @root.wo.assignedToId}}>{{name}}{{#if specialty}} — {{specialty}}{{/if}}</option>{{/each}}
+        </select>
+        {{#unless technicians.length}}<p class="mt-1 text-xs text-terracotta">No active technicians — add one under Users first.</p>{{/unless}}
+      </div>
+      <div>
+        <label class="label" for="wo-assign-priority">Priority</label>
+        <select id="wo-assign-priority" name="priority" class="input">
+          {{#each priorities}}<option value="{{this}}" {{selected this @root.wo.priority}}>{{label this}} priority</option>{{/each}}
+        </select>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 border-t border-line px-6 py-4">
+      <button type="button" class="js-close-wo-assign btn-secondary">Cancel</button>
+      <button class="btn">Assign &amp; send SMS</button>
+    </div>
+  </form>
+</dialog>
+<script>
+  (() => {
+    const dialog = document.getElementById("wo-assign-modal");
+    const opener = document.querySelector(".js-open-wo-assign");
+    if (!dialog || !opener || typeof dialog.showModal !== "function") return;
+    const form = dialog.querySelector("form");
+    const submit = form.querySelector("button:not([type])");
+    const lock = (on) => {
+      const gap = window.innerWidth - document.documentElement.clientWidth;
+      document.documentElement.style.overflow = on ? "hidden" : "";
+      document.body.style.paddingRight = on && gap ? gap + "px" : "";
+    };
+    opener.addEventListener("click", () => {
+      form.reset();
+      submit.disabled = false;
+      lock(true);
+      dialog.showModal();
+      dialog.querySelector("#wo-assign-tech").focus();
+    });
+    dialog.querySelectorAll(".js-close-wo-assign").forEach((b) => b.addEventListener("click", () => dialog.close()));
+    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener("close", () => lock(false));
+    form.addEventListener("submit", () => { submit.disabled = true; });
+  })();
+</script>
+{{/if}}
+<script>
+  // Keep the resolve notes while the technician logs parts (each part reloads the page) or the work order is
+  // on hold. The draft is dropped once the work order is resolved, closed or cancelled.
+  (() => {
+    const key = "wo-resolve-notes-{{wo.id}}";
+    const box = document.querySelector(".js-resolve-notes");
+    const store = { get: () => { try { return sessionStorage.getItem(key); } catch { return null; } },
+      set: (v) => { try { v ? sessionStorage.setItem(key, v) : sessionStorage.removeItem(key); } catch {} } };
+    if (["RESOLVED", "CLOSED", "CANCELLED"].includes("{{wo.status}}")) store.set("");
+    if (!box) return;
+    const saved = store.get();
+    if (saved && !box.value) box.value = saved;
+    box.addEventListener("input", () => store.set(box.value));
+  })();
+</script>
 {{> photoViewer}}
 {{> footer}}

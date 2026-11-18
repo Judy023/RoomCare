@@ -1,0 +1,113 @@
+{{!-- Shared "assign a cleaning task" modal.
+     Open it with <a class="js-assign" href="/tasks?roomId=…" data-room-id="…" data-room="Room 102 · Deluxe King · Floor 2">.
+     Leave out data-room-id to let the admin pick the room (needs `rooms` in the page context).
+     Needs housekeepers, taskTypes and priorities (taskService.assignFormOptions). After saving, the admin
+     comes back to the page they were on. Without <dialog> support the links go to /tasks?roomId=… as before. --}}
+<dialog id="assign-modal" class="dialog max-w-lg" aria-labelledby="assign-title">
+  <form method="POST" action="/tasks" class="flex max-h-[85vh] flex-col">
+    <input type="hidden" name="back" value="/tasks" class="js-assign-back">
+    <div class="flex items-start justify-between gap-3 border-b border-line px-6 py-5">
+      <div>
+        <h2 id="assign-title" class="font-display text-xl font-semibold">Assign a cleaning task</h2>
+        <p class="muted js-assign-room"></p>
+      </div>
+      <button type="button" class="js-close-assign icon-btn text-xl leading-none" aria-label="Close">×</button>
+    </div>
+
+    <div class="space-y-4 overflow-y-auto overscroll-contain px-6 py-5">
+      {{#if rooms}}
+      <div class="js-assign-room-field">
+        <label class="label" for="assign-room">Room</label>
+        <select id="assign-room" name="roomId" class="input" required>
+          <option value="">Select a room…</option>
+          {{#each rooms}}<option value="{{id}}">{{roomNo}} — {{type}}{{#unless (hiddenStatus status)}} ({{roomLabel status}}){{/unless}}</option>{{/each}}
+        </select>
+      </div>
+      {{else}}
+      <input type="hidden" name="roomId">
+      {{/if}}
+      <div>
+        <label class="label" for="assign-housekeeper">Housekeeper</label>
+        <select id="assign-housekeeper" name="housekeeperId" class="input" required>
+          <option value="">Select a housekeeper…</option>
+          {{#each housekeepers}}<option value="{{id}}">{{name}}{{#if staffCode}} ({{staffCode}}){{/if}}{{#if floor}} · floor {{floor}}{{/if}}{{#if shift}} · {{shift}}{{/if}}</option>{{/each}}
+        </select>
+        {{#unless housekeepers.length}}<p class="mt-1 text-xs text-terracotta">No active housekeepers — add one under Users first.</p>{{/unless}}
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="label" for="assign-type">Task type</label>
+          <select id="assign-type" name="taskType" class="input">
+            {{#each taskTypes}}<option value="{{value}}">{{this.label}}</option>{{/each}}
+          </select>
+        </div>
+        <div>
+          <label class="label" for="assign-priority">Priority</label>
+          <select id="assign-priority" name="priority" class="input">
+            {{#each priorities}}<option value="{{this}}" {{selected this "MEDIUM"}}>{{label this}}</option>{{/each}}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="label" for="assign-due">Due by (optional)</label>
+        <input id="assign-due" type="datetime-local" name="dueAt" class="input">
+      </div>
+      <div>
+        <label class="label" for="assign-notes">Notes for the housekeeper</label>
+        <textarea id="assign-notes" name="notes" rows="2" class="input" placeholder="e.g. VIP arrival at 14:00, extra pillows"></textarea>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-2 border-t border-line px-6 py-4">
+      <button type="button" class="js-close-assign btn-secondary">Cancel</button>
+      <button class="btn">Assign &amp; notify</button>
+    </div>
+  </form>
+</dialog>
+<script>
+  (() => {
+    const dialog = document.getElementById("assign-modal");
+    if (!dialog || typeof dialog.showModal !== "function") return;
+    const form = dialog.querySelector("form");
+    const roomField = dialog.querySelector(".js-assign-room-field");
+    const roomText = dialog.querySelector(".js-assign-room");
+    const submit = form.querySelector("button:not([type])");
+    const lock = (on) => {
+      const gap = window.innerWidth - document.documentElement.clientWidth;
+      document.documentElement.style.overflow = on ? "hidden" : "";
+      document.body.style.paddingRight = on && gap ? gap + "px" : "";
+    };
+    const open = (roomId, room, note) => {
+      form.reset();
+      form.elements.roomId.value = roomId || "";
+      // A room chosen from a button is fixed; otherwise show the room picker.
+      if (roomField) roomField.hidden = Boolean(roomId);
+      roomText.textContent = roomId ? [room, note].filter(Boolean).join(" · ") : "Choose a room and a housekeeper.";
+      // Come back to this page after saving (without the ?roomId=… that opened it).
+      const url = new URL(location.href);
+      url.searchParams.delete("roomId");
+      form.querySelector(".js-assign-back").value = url.pathname + url.search;
+      submit.disabled = false;
+      lock(true);
+      dialog.showModal();
+      (roomId ? dialog.querySelector("#assign-housekeeper") : form.elements.roomId).focus();
+    };
+    document.querySelectorAll("a.js-assign").forEach((link) => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        open(link.dataset.roomId, link.dataset.room, link.dataset.roomNote);
+      });
+    });
+    dialog.querySelectorAll(".js-close-assign").forEach((b) => b.addEventListener("click", () => dialog.close()));
+    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener("close", () => lock(false));
+    form.addEventListener("submit", () => { submit.disabled = true; });
+
+    // /tasks?roomId=… (old links, notifications) opens the modal straight away for that room.
+    const preset = new URLSearchParams(location.search).get("roomId");
+    if (preset && form.elements.roomId.tagName === "SELECT") {
+      const opt = [...form.elements.roomId.options].find((o) => o.value === preset);
+      if (opt) open(preset, "Room " + opt.textContent.trim());
+    }
+  })();
+</script>

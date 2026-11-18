@@ -1,0 +1,25 @@
+{{> head}}
+<div class="page-header">
+  <div>
+    <p class="eyebrow">My work</p>
+    <h1 class="page-title">Work History</h1>
+    <p class="page-sub">{{total}} finished task{{#if (ne total 1)}}s{{/if}}</p>
+  </div>
+</div>
+
+{{#each days}}
+<section class="card {{#unless @first}}mt-6{{/unless}}">
+  <h2 class="section-title">{{day}} <span class="font-normal muted">· {{tasks.length}}</span></h2>
+  <ul class="divide-y divide-line text-sm">
+    {{#each tasks}}
+    <li class="list-row flex-wrap"><span>Room <b>{{room.roomNo}}</b> · {{title}}</span><span class="flex items-center gap-2">{{badge status}} <span class="text-xs text-moss">{{formatTime completedAt}} · {{minutesBetween startedAt completedAt}}</span></span></li>
+    {{/each}}
+  </ul>
+</section>
+{{else}}
+<div class="card py-10 text-center">
+  <p class="font-display text-xl font-semibold">No finished tasks yet</p>
+  <p class="muted">Rooms you mark as done will show up here.</p>
+</div>
+{{/each}}
+{{> footer}}

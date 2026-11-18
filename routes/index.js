@@ -31,7 +31,7 @@ import { homePage } from "../controllers/homeController.js";
 import { loginPage, registerPage, registerUser, forgotPasswordPage, loginUser, logoutUser } from "../controllers/authController.js";
 import { dashboardPage } from "../controllers/dashboardController.js";
 import { boardPage, roomPage, checkOutRoom, checkInRoom } from "../controllers/roomController.js";
-import { tasksPage, createTask, myTasksPage, startMyTask, completeMyTask } from "../controllers/taskController.js";
+import { tasksPage, createTask, myTasksPage, workHistoryPage, startMyTask, completeMyTask } from "../controllers/taskController.js";
 import {
   workOrdersPage, myWorkOrdersPage, newWorkOrderPage, createWorkOrder, workOrderPage,
   assignWo, startWo, holdWo, resumeWo, logWoParts, resolveWo, cancelWo,
@@ -84,6 +84,7 @@ router.post("/rooms/:id/checkin", admin, checkInRoom);
 router.get("/tasks", admin, tasksPage);
 router.post("/tasks", admin, createTask);
 router.get("/tasks/my", requireRole("housekeeper"), myTasksPage);
+router.get("/tasks/history", requireRole("housekeeper"), workHistoryPage);
 router.post("/tasks/:id/start", requireRole("housekeeper"), startMyTask);
 router.post("/tasks/:id/complete", requireRole("housekeeper"), completeMyTask);
 

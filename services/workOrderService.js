@@ -175,6 +175,10 @@ export const logParts = async (id, tech, { itemId, qty }) => {
 export const resolveWorkOrder = async (id, tech, notes) => {
   const wo = await getTechWorkOrder(id, tech);
   if (!notes?.trim()) throw new AppError("Describe what was done to resolve the issue.");
+  // Every repair must record the parts it used (stock is deducted when they are logged).
+  if (!(await PartUsage.count({ where: { workOrderId: wo.id } }))) {
+    throw new AppError(`Log the parts used on ${wo.code} before marking it resolved.`);
+  }
   await transition(wo, S.IN_PROGRESS, S.RESOLVED, tech.id, "WO_RESOLVE", { resolvedAt: new Date(), resolutionNotes: notes.trim() });
   await notifyRoles("admin", {
     channel: "PUSH",

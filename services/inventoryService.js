@@ -1,14 +1,18 @@
 import { Op } from "sequelize";
-import { sequelize, InventoryItem } from "../models/index.js";
+import { InventoryItem } from "../models/index.js";
 import { AppError } from "../utils/http.js";
 import { logAction } from "./logService.js";
 import { notifyRoles } from "./notificationService.js";
 
 export const listItems = () => InventoryItem.findAll({ order: [["category", "ASC"], ["name", "ASC"]] });
 
+// An item counts as low stock when fewer than this many units remain.
+export const LOW_STOCK_THRESHOLD = 5;
+export const isLowStock = (item) => Number(item.quantity) < LOW_STOCK_THRESHOLD;
+
 export const lowStockItems = () =>
   InventoryItem.findAll({
-    where: sequelize.where(sequelize.col("quantity"), Op.lte, sequelize.col("reorderLevel")),
+    where: { quantity: { [Op.lt]: LOW_STOCK_THRESHOLD } },
     order: [["quantity", "ASC"]],
   });
 
@@ -20,11 +24,11 @@ export const getItem = async (id) => {
 
 // Low-stock alert (the queue worker's job in the deployment diagram).
 export const checkLowStock = async (item) => {
-  if (item.quantity > item.reorderLevel) return;
+  if (!isLowStock(item)) return;
   await notifyRoles("admin", {
     channel: "EMAIL",
     title: `Low stock: ${item.name}`,
-    message: `${item.name} (${item.sku}) is down to ${item.quantity} ${item.unit}, at or below its reorder level of ${item.reorderLevel}. Supplier: ${item.supplier || "—"}.`,
+    message: `${item.name} (${item.sku}) is down to ${item.quantity} ${item.unit}, below the low-stock limit of ${LOW_STOCK_THRESHOLD}. Supplier: ${item.supplier || "—"}.`,
     link: "/inventory",
   });
 };

@@ -5,11 +5,12 @@ import { unreadCount } from "../services/notificationService.js";
 const NAV = [
   { href: "/dashboard", label: "Overview", roles: ["admin"] },
   { href: "/tasks/my", label: "My Tasks", roles: ["housekeeper"] },
+  { href: "/tasks/history", label: "Work History", roles: ["housekeeper"] },
   { href: "/work-orders/my", label: "My Work Orders", roles: ["technician"] },
   { href: "/rooms", label: "Room Board", roles: ["admin"] },
   { href: "/tasks", label: "Cleaning Tasks", roles: ["admin"] },
   { href: "/work-orders", label: "Work Orders", roles: ["admin", "technician"] },
-  { href: "/work-orders/new", label: "Report Issue", roles: ["housekeeper", "technician", "admin"] },
+  { href: "/work-orders/new", label: "Report Issue", roles: ["technician"] },
   { href: "/inspections", label: "Inspections", roles: ["admin"] },
   { href: "/inventory", label: "Inventory", roles: ["technician", "admin"] },
   { href: "/reports", label: "Reports", roles: ["admin"] },

@@ -39,7 +39,8 @@ export const myWorkOrdersPage = wrap(async (req, res) => {
 });
 
 export const newWorkOrderPage = wrap(async (req, res) => {
-  res.render("workorders/new", {
+  // ?modal=1 → just the form, loaded into the report modal (partials/reportDialog).
+  res.render(req.query.modal === "1" ? "workorders/form" : "workorders/new", {
     title: "Report Maintenance Issue",
     rooms: toPlain(await listRooms()),
     categories: WO_CATEGORIES,

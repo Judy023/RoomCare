@@ -24,6 +24,10 @@ export const inspectionState = async (room) => {
   return { ok: true };
 };
 
+// Out-of-order rooms already cleaned again but still waiting for a repair before they can be re-inspected.
+export const awaitingRepair = async () =>
+  (await inspectionQueue()).filter((room) => room.status === RoomStatus.OUT_OF_ORDER && !room.ready);
+
 export const pendingRooms = async () => {
   const rooms = await Room.findAll({
     where: { status: INSPECTABLE },
@@ -38,26 +42,28 @@ export const pendingRooms = async () => {
     !room.workOrders.some((w) => ACTIVE_WO_STATUSES.includes(w.status)));
 };
 
-// Admin overview: every vacant clean room (ready or not), plus out-of-order rooms whose repairs are all resolved.
+// Admin overview: every vacant clean room (ready or not), out-of-order rooms whose repairs are all resolved, and
+// out-of-order rooms already cleaned (e.g. re-cleaned after a failed inspection) that still wait for a repair.
 // `ready` = it can be inspected now; otherwise `waitingFor` says what is still open.
 export const inspectionQueue = async () => {
   const rooms = await Room.findAll({
     where: { status: INSPECTABLE },
     include: [
-      { model: CleaningTask, as: "tasks", required: false, where: { status: ACTIVE_TASK_STATUSES } },
+      { model: CleaningTask, as: "tasks", required: false, where: { status: [...ACTIVE_TASK_STATUSES, TaskStatus.DONE] } },
       { model: WorkOrder, as: "workOrders", required: false, where: { status: [...ACTIVE_WO_STATUSES, WorkOrderStatus.RESOLVED] } },
     ],
     order: [["floor", "ASC"], ["roomNo", "ASC"]],
   });
   return rooms
     .map((room) => {
-      const openTask = room.tasks[0];
+      const openTask = room.tasks.find((t) => ACTIVE_TASK_STATUSES.includes(t.status));
+      const cleaned = room.tasks.some((t) => t.status === TaskStatus.DONE);
       const openWo = room.workOrders.find((w) => ACTIVE_WO_STATUSES.includes(w.status));
       const resolved = room.workOrders.filter((w) => w.status === WorkOrderStatus.RESOLVED).length;
       const waitingFor = openTask ? `cleaning task ${openTask.code}` : openWo ? `work order ${openWo.code}` : null;
-      return { ...room.get({ plain: true }), ready: !waitingFor, waitingFor, resolved };
+      return { ...room.get({ plain: true }), ready: !waitingFor, waitingFor, resolved, cleaned };
     })
-    .filter((room) => room.status === RoomStatus.VACANT_CLEAN || room.ready);
+    .filter((room) => room.status === RoomStatus.VACANT_CLEAN || room.ready || room.cleaned);
 };
 
 // Occupied rooms with a resolved repair: they can only be inspected after the guest checks out.
@@ -133,8 +139,10 @@ export const recordInspection = async (roomId, admin, { items, remarks }) => {
 
   const failedCleaning = failed.some((c) => c.kind === "cleaning");
   if (failedCleaning && lastTask) {
-    lastTask.status = TaskStatus.PENDING;
-    lastTask.startedAt = null;
+    // The re-clean continues the same job: the task goes straight back to In Progress (not Assigned),
+    // so the housekeeper just marks it done again. startedAt is kept so the time taken covers both rounds.
+    lastTask.status = TaskStatus.IN_PROGRESS;
+    lastTask.startedAt = lastTask.startedAt || new Date();
     lastTask.completedAt = null;
     lastTask.notes = [lastTask.notes, `Re-clean after failed inspection: ${failedLabels}${remarks?.trim() ? ` — ${remarks.trim()}` : ""}`].filter(Boolean).join("\n");
     await lastTask.save();
@@ -147,6 +155,7 @@ export const recordInspection = async (roomId, admin, { items, remarks }) => {
   }
 
   if (reopened.length) await setStatus(room, RoomStatus.OUT_OF_ORDER, admin.id, "inspection failed, repair reopened");
+  else if (failedCleaning && lastTask) await setStatus(room, RoomStatus.CLEANING, admin.id, `inspection failed, ${lastTask.code} back to cleaning`);
   else if (failedCleaning) await setStatus(room, RoomStatus.VACANT_DIRTY, admin.id, "inspection failed, needs re-clean");
   await logAction(admin.id, "INSPECTION_FAIL", "Room", room.id, `Room ${room.roomNo}: ${failedLabels}`);
   return { inspection, result, reopenedTask: failedCleaning && lastTask ? lastTask : null, reopenedWos: reopened, needsNewTask: failedCleaning && !lastTask };

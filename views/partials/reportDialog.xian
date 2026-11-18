@@ -1,0 +1,52 @@
+{{!-- Shared "Report a maintenance issue" modal. Any link to /work-orders/new (sidebar, buttons, per-task links)
+     opens the form here instead of navigating; if the form cannot be loaded (or the browser has no <dialog>),
+     the link works as before. --}}
+<dialog id="report-modal" class="dialog max-w-lg" aria-label="Report a maintenance issue"></dialog>
+<script>
+  (() => {
+    const dialog = document.getElementById("report-modal");
+    if (!dialog || typeof dialog.showModal !== "function") return;
+    const lock = (on) => {
+      const gap = window.innerWidth - document.documentElement.clientWidth;
+      document.documentElement.style.overflow = on ? "hidden" : "";
+      document.body.style.paddingRight = on && gap ? gap + "px" : "";
+    };
+    const wire = () => {
+      const form = dialog.querySelector("form");
+      const photo = dialog.querySelector(".js-photo");
+      const img = dialog.querySelector(".js-photo-preview");
+      photo?.addEventListener("change", () => {
+        const file = photo.files[0];
+        if (!file) return img.classList.add("hidden");
+        img.src = URL.createObjectURL(file);
+        img.classList.remove("hidden");
+      });
+      dialog.querySelectorAll(".js-close-report").forEach((b) => b.addEventListener("click", () => dialog.close()));
+      form?.addEventListener("submit", () => { const b = form.querySelector("button:not([type])"); if (b) b.disabled = true; });
+    };
+    document.addEventListener("click", async (e) => {
+      const link = e.target.closest('a[href^="/work-orders/new"]');
+      if (!link || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+      if (location.pathname === "/work-orders/new") return; // already on the full form
+      e.preventDefault();
+      try {
+        const url = new URL(link.href, location.href);
+        url.searchParams.set("modal", "1");
+        const res = await fetch(url, { credentials: "same-origin" });
+        if (!res.ok) throw new Error(res.status);
+        dialog.innerHTML = await res.text();
+        wire();
+        // On small screens the sidebar is a drawer; close it so it isn't left open behind the modal.
+        document.getElementById("sidebar")?.classList.add("-translate-x-full");
+        document.getElementById("sidebar-backdrop")?.classList.add("hidden");
+        lock(true);
+        dialog.showModal();
+        dialog.querySelector("select:invalid, textarea")?.focus();
+      } catch {
+        location.href = link.href; // fall back to the full page
+      }
+    });
+    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener("close", () => { dialog.innerHTML = ""; lock(false); });
+  })();
+</script>

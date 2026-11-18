@@ -6,44 +6,14 @@
   <p class="page-sub">The room is set to <b>Out of Order</b> and an admin is notified right away.</p>
   </div>
   <form method="POST" action="/work-orders" enctype="multipart/form-data" class="card space-y-5 sm:p-8">
-    <input type="hidden" name="taskId" value="{{taskId}}">
-    <div>
-      <label class="label" for="roomId">Room</label>
-      <select id="roomId" name="roomId" class="input" required>
-        <option value="">Select a room…</option>
-        {{#each rooms}}<option value="{{id}}" {{selected id @root.roomId}}>{{roomNo}} — {{type}} (floor {{floor}})</option>{{/each}}
-      </select>
-    </div>
-    <div class="grid grid-cols-2 gap-3">
-      <div>
-        <label class="label" for="category">Category</label>
-        <select id="category" name="category" class="input" required>
-          {{#each categories}}<option value="{{this}}">{{this}}</option>{{/each}}
-        </select>
-      </div>
-      <div>
-        <label class="label" for="priority">How urgent?</label>
-        <select id="priority" name="priority" class="input">
-          {{#each priorities}}<option value="{{this}}" {{selected this "MEDIUM"}}>{{label this}}</option>{{/each}}
-        </select>
-      </div>
-    </div>
-    <div>
-      <label class="label" for="description">What's wrong?</label>
-      <textarea id="description" name="description" rows="3" class="input" required minlength="5" placeholder="e.g. Aircon not cooling, blowing warm air"></textarea>
-    </div>
-    <div>
-      <label class="label" for="photo">Photo (optional, max 5 MB)</label>
-      <input id="photo" type="file" name="photo" accept="image/*" capture="environment" class="block w-full cursor-pointer rounded-xl border border-dashed border-line bg-ivory p-3 text-sm text-moss transition hover:border-gold/60 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-forest file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-pine">
-      <img id="preview" alt="" class="mt-3 hidden max-h-48 rounded-xl border border-line shadow-soft">
-    </div>
+    {{> reportFields p=""}}
     <button class="btn w-full py-3">Submit report</button>
   </form>
 </div>
 <script>
-  document.getElementById("photo").addEventListener("change", (e) => {
+  document.querySelector(".js-photo").addEventListener("change", (e) => {
     const file = e.target.files[0];
-    const img = document.getElementById("preview");
+    const img = document.querySelector(".js-photo-preview");
     if (!file) return img.classList.add("hidden");
     img.src = URL.createObjectURL(file);
     img.classList.remove("hidden");

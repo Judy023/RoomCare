@@ -1,0 +1,19 @@
+{{!-- Report form without the page layout, loaded into the shared modal (partials/reportDialog). --}}
+<form method="POST" action="/work-orders" enctype="multipart/form-data" class="flex max-h-[85vh] flex-col">
+  <div class="flex items-start justify-between gap-3 border-b border-line px-6 py-5">
+    <div>
+      <h2 class="font-display text-xl font-semibold">Report a Maintenance Issue</h2>
+      <p class="muted">The room is set to <b>Out of Order</b> and an admin is notified right away.</p>
+    </div>
+    <button type="button" class="js-close-report icon-btn text-xl leading-none" aria-label="Close">×</button>
+  </div>
+
+  <div class="space-y-5 overflow-y-auto overscroll-contain px-6 py-5">
+    {{> reportFields p="rm-"}}
+  </div>
+
+  <div class="flex gap-2 rounded-b-2xl border-t border-line bg-ivory px-6 py-4">
+    <button type="button" class="btn-ghost-danger js-close-report flex-1">Cancel</button>
+    <button class="btn flex-1">Submit report</button>
+  </div>
+</form>

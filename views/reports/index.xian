@@ -21,7 +21,7 @@
   <div class="stat"><div class="stat-label">Inspection pass rate</div><div class="stat-value">{{#if report.tiles.inspections}}{{report.tiles.passRate}}%{{else}}—{{/if}}</div><div class="stat-foot">{{report.tiles.inspections}} inspections</div></div>
   <div class="stat"><div class="stat-label">Work orders reported</div><div class="stat-value">{{report.tiles.workOrders}}</div><div class="stat-foot">in this period</div></div>
   <div class="stat"><div class="stat-label">Parts cost</div><div class="stat-value"><span class="mr-0.5 font-sans text-base font-medium text-moss">₱</span>{{report.tiles.partsCost}}</div><div class="stat-foot">consumed on repairs</div></div>
-  <div class="stat {{#if report.tiles.lowStock}}border-gold/40{{/if}}"><div class="stat-label">Low-stock items</div><div class="stat-value {{#if report.tiles.lowStock}}!text-gold-deep{{/if}}">{{report.tiles.lowStock}}</div><div class="stat-foot">at or below reorder level</div></div>
+  <div class="stat {{#if report.tiles.lowStock}}border-gold/40{{/if}}"><div class="stat-label">Low-stock items</div><div class="stat-value {{#if report.tiles.lowStock}}!text-gold-deep{{/if}}">{{report.tiles.lowStock}}</div><div class="stat-foot">below 5 in stock</div></div>
 </div>
 
 <div class="grid gap-5 lg:grid-cols-2">

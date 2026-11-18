@@ -1,0 +1,33 @@
+{{!-- Maintenance-report fields, shared by the full page (workorders/new) and the modal (workorders/form).
+     p = id prefix so the modal's ids never clash with a page's. --}}
+<input type="hidden" name="taskId" value="{{taskId}}">
+<div>
+  <label class="label" for="{{p}}roomId">Room</label>
+  <select id="{{p}}roomId" name="roomId" class="input" required>
+    <option value="">Select a room…</option>
+    {{#each rooms}}<option value="{{id}}" {{selected id @root.roomId}}>{{roomNo}} — {{type}} (floor {{floor}})</option>{{/each}}
+  </select>
+</div>
+<div class="grid grid-cols-2 gap-3">
+  <div>
+    <label class="label" for="{{p}}category">Category</label>
+    <select id="{{p}}category" name="category" class="input" required>
+      {{#each categories}}<option value="{{this}}">{{this}}</option>{{/each}}
+    </select>
+  </div>
+  <div>
+    <label class="label" for="{{p}}priority">How urgent?</label>
+    <select id="{{p}}priority" name="priority" class="input">
+      {{#each priorities}}<option value="{{this}}" {{selected this "MEDIUM"}}>{{label this}}</option>{{/each}}
+    </select>
+  </div>
+</div>
+<div>
+  <label class="label" for="{{p}}description">What's wrong?</label>
+  <textarea id="{{p}}description" name="description" rows="3" class="input" required minlength="5" placeholder="e.g. Aircon not cooling, blowing warm air"></textarea>
+</div>
+<div>
+  <label class="label" for="{{p}}photo">Photo (optional, max 5 MB)</label>
+  <input id="{{p}}photo" type="file" name="photo" accept="image/*" capture="environment" class="js-photo block w-full cursor-pointer rounded-xl border border-dashed border-line bg-ivory p-3 text-sm text-moss transition hover:border-gold/60 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-forest file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-pine">
+  <img alt="" class="js-photo-preview mt-3 hidden max-h-48 rounded-xl border border-line shadow-soft">
+</div>

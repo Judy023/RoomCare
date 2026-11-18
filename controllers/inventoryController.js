@@ -1,8 +1,8 @@
-import { listItems, createItem, updateItem, restock } from "../services/inventoryService.js";
+import { listItems, createItem, updateItem, restock, isLowStock } from "../services/inventoryService.js";
 import { wrap, toPlain } from "../utils/http.js";
 
 export const inventoryPage = wrap(async (req, res) => {
-  const items = toPlain(await listItems()).map((i) => ({ ...i, low: i.quantity <= i.reorderLevel }));
+  const items = toPlain(await listItems()).map((i) => ({ ...i, low: isLowStock(i) }));
   res.render("inventory/index", {
     title: "Inventory & Parts",
     items,

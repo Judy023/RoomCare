@@ -1,4 +1,4 @@
-import { pendingRooms, listInspections, inspectionContext, recordInspection } from "../services/inspectionService.js";
+import { pendingRooms, awaitingRepair, listInspections, inspectionContext, recordInspection } from "../services/inspectionService.js";
 import { INSPECTION_CHECKLIST } from "../models/enums.js";
 import { wrap, toPlain, AppError } from "../utils/http.js";
 
@@ -6,9 +6,9 @@ import { wrap, toPlain, AppError } from "../utils/http.js";
 const safeBack = (p) => (typeof p === "string" && /^\/(?!\/)[\w\-/?=&%.]*$/.test(p) ? p : "/inspections");
 
 export const inspectionsPage = wrap(async (req, res) => {
-  const [pending, recent] = await Promise.all([pendingRooms(), listInspections()]);
+  const [pending, waiting, recent] = await Promise.all([pendingRooms(), awaitingRepair(), listInspections()]);
   res.render("inspections/index", {
-    title: "Inspections", pending: toPlain(pending), recent: toPlain(recent), checklist: INSPECTION_CHECKLIST,
+    title: "Inspections", pending: toPlain(pending), waiting, recent: toPlain(recent), checklist: INSPECTION_CHECKLIST,
   });
 });
 

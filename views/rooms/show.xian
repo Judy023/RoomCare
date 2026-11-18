@@ -9,7 +9,7 @@
     {{#if canCheckInOut}}
       {{#if (eq room.status "OCCUPIED")}}<form method="POST" action="/rooms/{{room.id}}/checkout"><button class="btn-secondary">Check out guest</button></form>{{/if}}
     {{/if}}
-    {{#if canAssign}}<a href="/tasks?roomId={{room.id}}" class="btn-secondary">Assign task</a>{{/if}}
+    {{#if canAssign}}<a href="/tasks?roomId={{room.id}}" data-room-id="{{room.id}}" data-room="Room {{room.roomNo}} · {{room.type}} · Floor {{room.floor}}" {{#if reassign}}data-room-note="Currently with {{#each room.tasks}}{{#if (eq status 'PENDING')}}{{housekeeper.name}} ({{code}}){{/if}}{{/each}} — pick the new housekeeper."{{/if}} class="btn-secondary js-assign">{{#if reassign}}Reassign task{{else}}Assign task{{/if}}</a>{{/if}}
     {{#if canInspect}}<a href="/inspections/new?roomId={{room.id}}" class="btn js-inspect">Inspect room</a>{{/if}}  </div>
 </div>
 
@@ -51,4 +51,5 @@
   </section>
 </div>
 {{> inspectDialog}}
+{{#if canAssign}}{{> assignDialog}}{{/if}}
 {{> footer}}

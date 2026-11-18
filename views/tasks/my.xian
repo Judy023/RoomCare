@@ -5,7 +5,6 @@
     <h1 class="page-title">My Tasks</h1>
     <p class="page-sub">{{active.length}} open · {{done.length}} finished today</p>
   </div>
-  <a href="/work-orders/new" class="btn-secondary">Report an issue</a>
 </div>
 
 <div class="grid gap-4 md:grid-cols-2">
@@ -43,15 +42,4 @@
   </div>
   {{/each}}
 </div>
-
-{{#if done.length}}
-<section class="card mt-6">
-  <h2 class="section-title">Finished today</h2>
-  <ul class="divide-y divide-line text-sm">
-    {{#each done}}
-    <li class="list-row flex-wrap"><span>Room <b>{{room.roomNo}}</b> · {{title}}</span><span class="flex items-center gap-2">{{badge status}} <span class="text-xs text-moss">{{formatTime completedAt}} · {{minutesBetween startedAt completedAt}}</span></span></li>
-    {{/each}}
-  </ul>
-</section>
-{{/if}}
 {{> footer}}

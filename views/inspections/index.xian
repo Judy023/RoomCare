@@ -74,6 +74,14 @@
     <div class="empty sm:col-span-2 lg:col-span-4">No rooms are waiting for inspection.</div>
     {{/each}}
   </div>
+  {{#if waiting.length}}
+  <div class="mt-5 rounded-xl border border-dashed border-gold/40 bg-gold-soft/50 p-4">
+    <h3 class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gold-deep">Cleaned, waiting for a repair before re-inspection · {{waiting.length}}</h3>
+    <ul class="space-y-1.5 text-sm">
+      {{#each waiting}}<li><a href="/rooms/{{id}}" class="link">Room {{roomNo}}</a> <span class="text-moss">· waiting for {{waitingFor}}</span></li>{{/each}}
+    </ul>
+  </div>
+  {{/if}}
 </section>
 
 <section class="card overflow-x-auto p-0">

@@ -5,10 +5,6 @@
     <h1 class="page-title">Turnover Overview</h1>
     <p class="page-sub">Good day, {{currentUser.name}}. Here is what needs attention across {{totalRooms}} rooms.</p>
   </div>
-  <div class="flex gap-2">
-    <a href="/rooms" class="btn-secondary">Room board</a>
-    <a href="/tasks" class="btn">Assign task</a>
-  </div>
 </div>
 
 <div class="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
@@ -35,10 +31,10 @@
         {{#if tasks.length}}
         {{#each tasks}}
         {{#if housekeeper}}<span class="shrink-0 text-xs text-moss">{{code}} · {{housekeeper.name}} · {{label status}}</span>
-        {{else}}<span class="flex shrink-0 items-center gap-2"><span class="text-xs text-moss">{{code}}{{#if (eq source "PMS")}} · from PMS{{/if}}</span><a href="/tasks?roomId={{../id}}" class="btn btn-sm">Assign</a></span>{{/if}}
+        {{else}}<span class="flex shrink-0 items-center gap-2"><span class="text-xs text-moss">{{code}}{{#if (eq source "PMS")}} · from PMS{{/if}}</span><a href="/tasks?roomId={{../id}}" class="btn btn-sm js-assign" data-room-id="{{../id}}" data-room="Room {{../roomNo}} · {{../type}} · Floor {{../floor}}">Assign</a></span>{{/if}}
         {{/each}}
         {{else}}
-        <a href="/tasks?roomId={{id}}" class="btn btn-sm">Assign</a>
+        <a href="/tasks?roomId={{id}}" class="btn btn-sm js-assign" data-room-id="{{id}}" data-room="Room {{roomNo}} · {{type}} · Floor {{floor}}">Assign</a>
         {{/if}}
       </li>
       {{/each}}
@@ -127,4 +123,5 @@
   {{/if}}
 </div>
 {{> inspectDialog}}
+{{> assignDialog}}
 {{> footer}}

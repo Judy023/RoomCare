@@ -3,7 +3,7 @@
   <div>
     <p class="eyebrow">Stock</p>
     <h1 class="page-title">Inventory &amp; Parts</h1>
-    <p class="page-sub">{{items.length}} items · <span class="{{#if lowCount}}font-semibold text-gold-deep{{/if}}">{{lowCount}} at or below reorder level</span></p>
+    <p class="page-sub">{{items.length}} items · <span class="{{#if lowCount}}font-semibold text-gold-deep{{/if}}">{{lowCount}} low stock</span></p>
   </div>
 </div>
 
@@ -29,7 +29,7 @@
       {{#each items}}
       <tr class="{{#if low}}bg-gold-soft/50{{/if}}">
         <td class="whitespace-nowrap font-mono text-xs text-moss">{{sku}}</td>
-        <td><b>{{name}}</b>{{#if low}} <span class="ml-1 rounded-full border border-gold/30 bg-gold-soft px-2 py-0.5 text-[11px] font-semibold text-gold-deep">Low</span>{{/if}}</td>
+        <td><b>{{name}}</b>{{#if low}} <span class="ml-1 rounded-full border border-gold/30 bg-gold-soft px-2 py-0.5 text-[11px] font-semibold text-gold-deep">Low stock</span>{{/if}}</td>
         <td>{{fallback category "—"}}</td>
         <td class="text-right tabular-nums font-semibold {{#if low}}text-gold-deep{{/if}}">{{quantity}} {{unit}}</td>
         <td class="text-right tabular-nums">{{reorderLevel}}</td>

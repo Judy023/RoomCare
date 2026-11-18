@@ -1,12 +1,13 @@
 import { Op } from "sequelize";
 import { CleaningTask, Room, User } from "../models/index.js";
 import { RoomStatus, TaskStatus, TASK_TYPES, PRIORITIES, ACTIVE_TASK_STATUSES } from "../models/enums.js";
-import { AppError, startOfToday } from "../utils/http.js";
+import { AppError, startOfToday, toPlain } from "../utils/http.js";
 import { logAction } from "./logService.js";
 import { notifyUser, notifyRoles } from "./notificationService.js";
 import { getRoom, setStatus } from "./roomService.js";
 import { queueCleaningCompleted } from "./pmsIntegrationService.js";
 import { PMS } from "../config/integrations.js";
+import { listStaff } from "./userService.js";
 
 const label = (s) => s.replace(/_/g, " ").toLowerCase();
 const STATUS_RANK = { IN_PROGRESS: 0, PENDING: 1, DONE: 2, INSPECTED: 3 };
@@ -44,6 +45,15 @@ export const listTasks = async ({ status, housekeeperId, roomId } = {}) => {
   return CleaningTask.findAll({ where, include: taskIncludes, order: [["createdAt", "DESC"]], limit: 200 });
 };
 
+// Housekeeper's work history: every task they finished, newest first.
+export const historyForHousekeeper = (housekeeperId, limit = 300) =>
+  CleaningTask.findAll({
+    where: { housekeeperId, status: { [Op.notIn]: ACTIVE_TASK_STATUSES }, completedAt: { [Op.ne]: null } },
+    include: taskIncludes,
+    order: [["completedAt", "DESC"]],
+    limit,
+  });
+
 // Housekeeper's list: everything still open plus what they finished today.
 export const listForHousekeeper = async (housekeeperId) => {
   const tasks = await CleaningTask.findAll({
@@ -78,6 +88,13 @@ export const vacantDirtyRooms = () =>
   });
 
 // 1.0 Assign Cleaning Tasks
+// Choices for the assign-task modal (views/partials/assignDialog).
+export const assignFormOptions = async () => ({
+  housekeepers: toPlain(await listStaff("housekeeper")),
+  taskTypes: Object.entries(TASK_TYPES).map(([value, label]) => ({ value, label })),
+  priorities: PRIORITIES,
+});
+
 export const assignTask = async ({ roomId, housekeeperId, taskType, priority, notes, dueAt }, admin) => {
   const room = await getRoom(roomId);
   const housekeeper = await User.findOne({ where: { id: housekeeperId || 0, role: "housekeeper", active: true } });
@@ -88,11 +105,15 @@ export const assignTask = async ({ roomId, housekeeperId, taskType, priority, no
     throw new AppError(`Room ${room.roomNo} is occupied — only a stayover service can be assigned.`);
   }
   const open = await CleaningTask.findOne({ where: { roomId: room.id, status: ACTIVE_TASK_STATUSES } });
-  if (open && open.housekeeperId) throw new AppError(`Room ${room.roomNo} already has an open task (${open.code}).`);
+  if (open?.status === TaskStatus.IN_PROGRESS) {
+    throw new AppError(`Room ${room.roomNo} is already being cleaned (${open.code}).`);
+  }
+  // A pending task that already has a housekeeper is handed over to the new one (reassign).
+  const previousId = open?.housekeeperId && open.housekeeperId !== housekeeper.id ? open.housekeeperId : null;
 
   let task;
   if (open) {
-    // A task created automatically from a PMS check-out is waiting for a housekeeper: assign that one
+    // Reuse the open task (a PMS check-out task waiting for a housekeeper, or a pending one being reassigned)
     // instead of creating a second task for the same room.
     task = await open.update({
       housekeeperId: housekeeper.id, adminId: admin.id, assignedAt: new Date(), taskType, title: TASK_TYPES[taskType], priority,
@@ -105,7 +126,14 @@ export const assignTask = async ({ roomId, housekeeperId, taskType, priority, no
       status: TaskStatus.PENDING, source: "MANUAL", assignedAt: new Date(),
     });
   }
-  await logAction(admin.id, "TASK_ASSIGN", "CleaningTask", task.id, `${task.code} Room ${room.roomNo} → ${housekeeper.name}${task.source === "PMS" ? " (PMS check-out task)" : ""}`);
+  await logAction(admin.id, previousId ? "TASK_REASSIGN" : "TASK_ASSIGN", "CleaningTask", task.id, `${task.code} Room ${room.roomNo} → ${housekeeper.name}${task.source === "PMS" ? " (PMS check-out task)" : ""}`);
+  if (previousId) {
+    await notifyUser(previousId, {
+      title: `Task reassigned: Room ${room.roomNo}`,
+      message: `${task.code} was reassigned to ${housekeeper.name} by ${admin.name}. You no longer need to clean this room.`,
+      link: "/tasks/my",
+    });
+  }
   await notifyUser(housekeeper, {
     channel: "PUSH",
     title: `New task: Room ${room.roomNo}`,
