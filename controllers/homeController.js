@@ -24,6 +24,7 @@
     SOFTWARE.
     */
     export const homePage = (req, res) => {
-  // The login page is the landing page; signed-in users go straight to their dashboard.
-  res.redirect(req.user ? "/dashboard" : "/login");
+  // Visitors see the landing page (features + how it works); signed-in users go straight to their dashboard.
+  if (req.user) return res.redirect("/dashboard");
+  res.render("home", { title: "Home" });
 };

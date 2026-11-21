@@ -1,7 +1,7 @@
 // RoomCare PWA service worker: caches the app shell; pages always come from the network
-// (room status must be live) and fall back to a cached copy only when offline.
-const CACHE = "roomcare-v3";
-const SHELL = ["/manifest.webmanifest"];
+// (room status must be live) and fall back to a cached copy, then an offline page, when offline.
+const CACHE = "roomcare-v4";
+const SHELL = ["/manifest.webmanifest", "/offline.html", "/icon.svg", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
@@ -28,6 +28,11 @@ self.addEventListener("fetch", (event) => {
         }
         return response;
       })
-      .catch(() => caches.match(request))
+      .catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        if (request.mode === "navigate") return caches.match("/offline.html");
+        return Response.error();
+      })
   );
 });

@@ -1,5 +1,10 @@
 {{> head}}
-<div class="mx-auto grid max-w-5xl overflow-hidden rounded-3xl border border-line bg-white shadow-lift sm:mt-4 lg:grid-cols-[1.05fr_1fr]">
+<div class="mx-auto max-w-5xl sm:mt-4">
+<a href="/" class="back-link mb-4">
+  <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+  Back to home
+</a>
+<div class="grid overflow-hidden rounded-3xl border border-line bg-white shadow-lift lg:grid-cols-[1.05fr_1fr]">
   <div class="relative hidden lg:block">
     <img src="/img/hotel-room.jpg" alt="" class="absolute inset-0 h-full w-full object-cover">
     <div class="absolute inset-0 bg-gradient-to-t from-forest via-forest/55 to-forest/10"></div>
@@ -29,6 +34,7 @@
       <p class="border-t border-line pt-5 text-center text-sm text-moss">New to RoomCare? <a href="/register" class="link">Create an account</a></p>
     </form>
   </div>
+</div>
 </div>
 <script>
   // Start with empty fields: browsers skip autofill on read-only inputs, so unlock each one only when the user goes to type.

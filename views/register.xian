@@ -1,5 +1,9 @@
 {{> head}}
 <div class="mx-auto max-w-xl sm:mt-4">
+  <a href="/" class="back-link mb-4">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to home
+  </a>
   <div class="mb-6 text-center">
     <p class="eyebrow">RoomCare</p>
     <h1 class="font-display text-3xl font-semibold tracking-tight">Create an account</h1>

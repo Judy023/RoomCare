@@ -1,44 +1,258 @@
 {{> head}}
+<style>html { scroll-behavior: smooth; } [id] { scroll-margin-top: 1.5rem; }</style>
+
+{{!-- Top bar --}}
+<header class="mb-6 flex items-center gap-3">
+  <a href="/" class="font-display text-2xl font-semibold tracking-tight text-forest">RoomCare</a>
+  <nav class="ml-6 hidden items-center gap-5 text-sm font-medium text-moss md:flex" aria-label="Sections">
+    <a href="#features" class="transition hover:text-forest">Features</a>
+    <a href="#how-it-works" class="transition hover:text-forest">How it works</a>
+    <a href="#roles" class="transition hover:text-forest">Who uses it</a>
+  </nav>
+  <div class="flex-1"></div>
+  <a href="/login" class="btn-secondary btn-sm">Sign in</a>
+  <a href="/register" class="btn btn-sm">Get started</a>
+</header>
+
+{{!-- Hero --}}
 <section class="relative overflow-hidden rounded-3xl border border-line bg-white shadow-soft">
   <div class="grid lg:grid-cols-2">
     <div class="px-6 py-12 sm:px-10 sm:py-16 lg:py-20">
       <p class="eyebrow">Housekeeping &amp; Hotel Maintenance</p>
       <h1 class="font-display text-4xl font-semibold leading-[1.1] tracking-tight text-forest sm:text-5xl">Every room, ready for the next guest.</h1>
-      <p class="mt-5 max-w-lg text-base leading-relaxed text-moss">Turn rooms around from check-out to the next arrival: assign cleaning, track room status live,
-        report and repair faults with photos, log parts, inspect and release rooms, and watch the KPIs.</p>
+      <p class="mt-5 max-w-lg text-base leading-relaxed text-moss">RoomCare takes a room from check-out to the next arrival: assign cleaning, track room status live,
+        report and repair faults with photos, inspect and release rooms, and watch the numbers that matter.</p>
       <div class="mt-8 flex flex-wrap gap-3">
         <a href="/login" class="btn btn-lg">Sign in</a>
         <a href="/register" class="btn-secondary btn-lg">Create an account</a>
       </div>
+      <a href="#how-it-works" class="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-gold transition hover:text-gold-deep">
+        See how it works
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+      </a>
     </div>
-    <div class="relative hidden min-h-[320px] lg:block">
+    <div class="relative hidden min-h-[360px] lg:block">
       <img src="/img/hotel-room.jpg" alt="A freshly made hotel room" class="absolute inset-0 h-full w-full object-cover">
       <div class="absolute inset-0 bg-gradient-to-r from-white via-white/10 to-transparent"></div>
     </div>
   </div>
 </section>
 
-<section class="mt-8 grid gap-4 sm:grid-cols-3">
-  <div class="card">
-    <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-sage text-forest">
-      <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
-    </span>
-    <h2 class="font-semibold">Housekeeping</h2>
-    <p class="mt-1.5 muted leading-relaxed">Admins assign cleaning tasks; housekeepers start and finish them from their phone.</p>
+{{!-- Quick stats strip --}}
+<section class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+  <div class="rounded-2xl border border-line bg-white px-5 py-4 shadow-soft">
+    <div class="font-display text-2xl font-semibold text-forest">Live</div>
+    <div class="text-xs text-moss">room status board</div>
   </div>
-  <div class="card">
-    <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gold-soft text-gold-deep">
-      <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>
-    </span>
-    <h2 class="font-semibold">Maintenance</h2>
-    <p class="mt-1.5 muted leading-relaxed">Issues become work orders with photos, SLA tracking, technician SMS and parts usage.</p>
+  <div class="rounded-2xl border border-line bg-white px-5 py-4 shadow-soft">
+    <div class="font-display text-2xl font-semibold text-forest">3 roles</div>
+    <div class="text-xs text-moss">one shared workspace</div>
   </div>
-  <div class="card">
-    <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-leaf-soft text-leaf">
-      <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
-    </span>
-    <h2 class="font-semibold">Inspection &amp; KPIs</h2>
-    <p class="mt-1.5 muted leading-relaxed">Inspect and release rooms, and report on turnover and repair times.</p>
+  <div class="rounded-2xl border border-line bg-white px-5 py-4 shadow-soft">
+    <div class="font-display text-2xl font-semibold text-forest">SLA</div>
+    <div class="text-xs text-moss">tracked on every repair</div>
+  </div>
+  <div class="rounded-2xl border border-line bg-white px-5 py-4 shadow-soft">
+    <div class="font-display text-2xl font-semibold text-forest">Mobile</div>
+    <div class="text-xs text-moss">installable on any phone</div>
+  </div>
+</section>
+
+{{!-- Features --}}
+<section id="features" class="mt-16">
+  <div class="mb-8 max-w-2xl">
+    <p class="eyebrow">Features</p>
+    <h2 class="font-display text-3xl font-semibold tracking-tight text-forest">Everything a hotel floor team needs, in one place</h2>
+    <p class="mt-2 text-moss">Housekeeping, maintenance and inspection share one live picture of every room, so nobody has to ask what is ready.</p>
+  </div>
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="card">
+      <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-sage text-forest">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </span>
+      <h3 class="font-semibold">Live room status board</h3>
+      <p class="mt-1.5 muted leading-relaxed">See every room at a glance: Room Dirty, Cleaning, Room Clean, Vacant Room, Occupied or Out Of Order. Check guests out and in from the board.</p>
+    </div>
+    <div class="card">
+      <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-sage text-forest">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+      </span>
+      <h3 class="font-semibold">Cleaning task assignment</h3>
+      <p class="mt-1.5 muted leading-relaxed">Admins assign or reassign cleaning tasks. Housekeepers start and finish them from their phone, and every job is timed.</p>
+    </div>
+    <div class="card">
+      <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gold-soft text-gold-deep">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>
+      </span>
+      <h3 class="font-semibold">Maintenance work orders</h3>
+      <p class="mt-1.5 muted leading-relaxed">Report a fault with photos and a priority. Technicians are notified, work the job, put it on hold if needed, and resolve it.</p>
+    </div>
+    <div class="card">
+      <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gold-soft text-gold-deep">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      </span>
+      <h3 class="font-semibold">SLA tracking</h3>
+      <p class="mt-1.5 muted leading-relaxed">Every work order has a target time by priority, from 2 hours for urgent to 72 for low, and overdue jobs stand out.</p>
+    </div>
+    <div class="card">
+      <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-leaf-soft text-leaf">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/></svg>
+      </span>
+      <h3 class="font-semibold">Room inspection &amp; release</h3>
+      <p class="mt-1.5 muted leading-relaxed">A checklist covers cleaning and maintenance. Pass a room and it becomes a Vacant Room; fail it and it goes back for re-inspection.</p>
+    </div>
+    <div class="card">
+      <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-leaf-soft text-leaf">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+      </span>
+      <h3 class="font-semibold">Parts &amp; inventory</h3>
+      <p class="mt-1.5 muted leading-relaxed">Technicians log the parts they use on each repair, and admins restock and watch inventory levels.</p>
+    </div>
+    <div class="card">
+      <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-steel-soft text-steel">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      </span>
+      <h3 class="font-semibold">Reports &amp; KPIs</h3>
+      <p class="mt-1.5 muted leading-relaxed">Turnover and repair times at a glance, with CSV exports of work orders and housekeeping jobs.</p>
+    </div>
+    <div class="card">
+      <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-steel-soft text-steel">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0a3 3 0 1 1-6 0"/></svg>
+      </span>
+      <h3 class="font-semibold">Instant notifications</h3>
+      <p class="mt-1.5 muted leading-relaxed">New assignments, status changes and alerts reach the right person in the app, with SMS for technicians.</p>
+    </div>
+    <div class="card">
+      <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-sage text-forest">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+      </span>
+      <h3 class="font-semibold">Works on phones</h3>
+      <p class="mt-1.5 muted leading-relaxed">Staff on the floor use RoomCare as an installable app, so work stays in their pocket.</p>
+    </div>
+  </div>
+</section>
+
+{{!-- Spotlight with photo --}}
+<section class="mt-16 overflow-hidden rounded-3xl border border-line bg-white shadow-soft">
+  <div class="grid items-center gap-0 md:grid-cols-[minmax(0,320px)_1fr]">
+    <div class="relative h-56 md:h-full md:min-h-[260px]">
+      <img src="/img/housekeeping.jpg" alt="A housekeeper making up a hotel bed" class="absolute inset-0 h-full w-full object-cover">
+    </div>
+    <div class="px-6 py-8 sm:px-10">
+      <p class="eyebrow">Built for the floor team</p>
+      <h2 class="font-display text-2xl font-semibold tracking-tight text-forest sm:text-3xl">Less chasing, more rooms ready</h2>
+      <p class="mt-3 max-w-xl leading-relaxed text-moss">Housekeepers see exactly which rooms are theirs and what is next. Technicians get faults with photos and priorities.
+        Supervisors see the whole property update as work gets done, with no radio calls and no paper checklists.</p>
+    </div>
+  </div>
+</section>
+
+{{!-- How it works --}}
+<section id="how-it-works" class="mt-16">
+  <div class="mb-8 max-w-2xl">
+    <p class="eyebrow">How it works</p>
+    <h2 class="font-display text-3xl font-semibold tracking-tight text-forest">From check-out to the next guest in six steps</h2>
+  </div>
+  <ol class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <li class="card">
+      <span class="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-forest font-display text-base font-semibold text-white">1</span>
+      <h3 class="font-semibold">Guest checks out</h3>
+      <p class="mt-1.5 muted leading-relaxed">An admin checks the room out on the board. The room turns <b class="font-semibold text-forest">Room Dirty</b> and a cleaning task is created.</p>
+    </li>
+    <li class="card">
+      <span class="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-forest font-display text-base font-semibold text-white">2</span>
+      <h3 class="font-semibold">Cleaning is assigned</h3>
+      <p class="mt-1.5 muted leading-relaxed">The admin assigns the task to a housekeeper, and can reassign it any time. The housekeeper is notified straight away.</p>
+    </li>
+    <li class="card">
+      <span class="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-forest font-display text-base font-semibold text-white">3</span>
+      <h3 class="font-semibold">Housekeeper cleans</h3>
+      <p class="mt-1.5 muted leading-relaxed">From <b class="font-semibold text-forest">My Tasks</b> they tap Start, and the room shows <b class="font-semibold text-forest">Cleaning</b>. Tapping Complete makes it <b class="font-semibold text-forest">Room Clean</b> and logs the time.</p>
+    </li>
+    <li class="card">
+      <span class="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-gold-soft font-display text-base font-semibold text-gold-deep">4</span>
+      <h3 class="font-semibold">Faults become work orders</h3>
+      <p class="mt-1.5 muted leading-relaxed">Spotted a leak or a broken aircon? Report it with photos and a priority. A technician is assigned, works it, and logs the parts used. A room with open repairs cannot be released.</p>
+    </li>
+    <li class="card">
+      <span class="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-forest font-display text-base font-semibold text-white">5</span>
+      <h3 class="font-semibold">Admin inspects</h3>
+      <p class="mt-1.5 muted leading-relaxed">The admin walks the checklist. A pass releases the room as a <b class="font-semibold text-forest">Vacant Room</b>; a fail sends it back for rework and re-inspection.</p>
+    </li>
+    <li class="card">
+      <span class="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-leaf-soft font-display text-base font-semibold text-leaf">6</span>
+      <h3 class="font-semibold">Next guest checks in</h3>
+      <p class="mt-1.5 muted leading-relaxed">The room goes <b class="font-semibold text-forest">Occupied</b> and the cycle starts again. Reports track how long each turnover and repair took.</p>
+    </li>
+  </ol>
+
+  {{!-- Room status flow --}}
+  <div class="mt-6 rounded-2xl border border-line bg-white p-5 shadow-soft sm:p-6">
+    <p class="mb-4 text-xs font-semibold uppercase tracking-wider text-moss">A room's journey</p>
+    <div class="flex flex-wrap items-center gap-2 text-sm font-semibold">
+      <span class="rounded-full bg-terracotta-soft px-3 py-1 text-terracotta">Room Dirty</span>
+      <span class="text-moss/50" aria-hidden="true">→</span>
+      <span class="rounded-full bg-steel-soft px-3 py-1 text-steel">Cleaning</span>
+      <span class="text-moss/50" aria-hidden="true">→</span>
+      <span class="rounded-full bg-gold-soft px-3 py-1 text-gold-deep">Room Clean</span>
+      <span class="text-moss/50" aria-hidden="true">→</span>
+      <span class="rounded-full bg-leaf-soft px-3 py-1 text-leaf">Vacant Room</span>
+      <span class="text-moss/50" aria-hidden="true">→</span>
+      <span class="rounded-full bg-sage px-3 py-1 text-forest">Occupied</span>
+    </div>
+    <p class="mt-3 text-xs text-moss">A room with an unresolved critical fault is marked <b class="font-semibold text-forest">Out Of Order</b> until it is repaired.</p>
+  </div>
+</section>
+
+{{!-- Roles --}}
+<section id="roles" class="mt-16">
+  <div class="mb-8 max-w-2xl">
+    <p class="eyebrow">Who uses it</p>
+    <h2 class="font-display text-3xl font-semibold tracking-tight text-forest">One system, three focused workspaces</h2>
+    <p class="mt-2 text-moss">Each person sees only what they need to do their job.</p>
+  </div>
+  <div class="grid gap-4 md:grid-cols-3">
+    <div class="card">
+      <p class="eyebrow">Housekeeper</p>
+      <h3 class="font-display text-xl font-semibold">Clean and report</h3>
+      <ul class="mt-3 space-y-2 text-sm leading-relaxed text-moss">
+        <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold"></span>See your assigned rooms</li>
+        <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold"></span>Start and complete tasks from your phone</li>
+        <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold"></span>Report faults with photos</li>
+        <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold"></span>Review your work history</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p class="eyebrow">Maintenance Technician</p>
+      <h3 class="font-display text-xl font-semibold">Repair and record</h3>
+      <ul class="mt-3 space-y-2 text-sm leading-relaxed text-moss">
+        <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold"></span>Get work orders by SMS and in-app</li>
+        <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold"></span>Start, hold, resume and resolve jobs</li>
+        <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold"></span>Log parts used from inventory</li>
+        <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold"></span>Beat the SLA clock</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p class="eyebrow">System Admin</p>
+      <h3 class="font-display text-xl font-semibold">Oversee and release</h3>
+      <ul class="mt-3 space-y-2 text-sm leading-relaxed text-moss">
+        <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold"></span>Run the room board and assign work</li>
+        <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold"></span>Inspect and release rooms</li>
+        <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold"></span>Manage users, rooms and inventory</li>
+        <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold"></span>Export reports and review audit logs</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+{{!-- Call to action --}}
+<section class="mt-16 overflow-hidden rounded-3xl bg-forest px-6 py-12 text-center text-white shadow-lift sm:px-10">
+  <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#E3CFA6]">Ready when you are</p>
+  <h2 class="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Get every room ready, faster.</h2>
+  <p class="mx-auto mt-3 max-w-xl text-white/80">Sign in to your workspace, or create an account as a housekeeper or maintenance technician.</p>
+  <div class="mt-7 flex flex-wrap justify-center gap-3">
+    <a href="/login" class="inline-flex items-center justify-center rounded-lg border border-white bg-white px-6 py-3 text-base font-semibold text-forest shadow-sm transition hover:bg-sage focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40">Sign in</a>
+    <a href="/register" class="inline-flex items-center justify-center rounded-lg border border-white/40 px-6 py-3 text-base font-semibold text-white transition hover:bg-white/10 focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40">Create an account</a>
   </div>
 </section>
 {{> footer}}
