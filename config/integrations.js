@@ -31,6 +31,22 @@ export const HR = {
   apiToken: process.env.HR_API_TOKEN || "",
 };
 
+// ── /api/integrations/* (FrontDeskFlow = the PMS above, StaffPay = the HR/Payroll system above) ─────────
+// Each external system has its own inbound key, so a FrontDeskFlow key can never read StaffPay data.
+// The older variables (PMS_WEBHOOK_TOKEN, HR_API_TOKEN) are used when the new ones are not set.
+export const FRONTDESK = {
+  apiKey: process.env.FRONTDESK_API_KEY || PMS.inboundToken,
+};
+export const STAFFPAY = {
+  apiKey: process.env.STAFFPAY_API_KEY || HR.apiToken,
+};
+
+// How outgoing requests to FrontDeskFlow are shaped. The URL itself is PMS_OUTBOUND_URL; these exist so the
+// real contract can be matched by configuration once the FrontDeskFlow developers publish it.
+PMS.outboundMethod = mode(process.env.PMS_OUTBOUND_METHOD, ["post", "put", "patch"], "post").toUpperCase();
+PMS.outboundAuthHeader = process.env.PMS_OUTBOUND_AUTH_HEADER || "Authorization";
+PMS.outboundAuthScheme = process.env.PMS_OUTBOUND_AUTH_SCHEME ?? "Bearer"; // "" sends the bare token (API-key style)
+
 // Safe summary for the admin screen: says what is configured, never the values.
 export const integrationConfigSummary = () => ({
   pms: {

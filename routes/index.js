@@ -49,6 +49,8 @@ import {
   hrJobLogs, hrAcknowledge, hrWorkSummary,
 } from "../controllers/apiController.js";
 
+import integrationRoutes from "./integrations.js";
+
 const router = express.Router();
 
 // PMS webhook and HR/Payroll API authenticate with their own tokens, not a session.
@@ -56,6 +58,9 @@ router.post("/api/pms/events", pmsWebhook);
 router.get("/api/hr/job-logs", hrJobLogs);
 router.post("/api/hr/job-logs/ack", hrAcknowledge);
 router.get("/api/hr/work-summary", hrWorkSummary);
+
+// System-to-system API for FrontDeskFlow and StaffPay (API-key auth).
+router.use("/api/integrations", integrationRoutes);
 
 router.use(loadUser);
 

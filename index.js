@@ -116,6 +116,9 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
+  if (err.type === "entity.parse.failed" && req.originalUrl.startsWith("/api/")) {
+    return res.status(400).json({ success: false, error: { code: "INVALID_JSON", message: "Request body is not valid JSON" } });
+  }
   console.error("❌", err);
   if (req.originalUrl.startsWith("/api/")) return res.status(500).json({ error: "Server error" });
   res.status(500).render("error", { title: "Server error", message: "Something went wrong on our side. Please try again." });

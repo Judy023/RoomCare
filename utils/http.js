@@ -1,8 +1,9 @@
 // A business-rule failure the user can act on (bad input, wrong status, not your task...).
 export class AppError extends Error {
-  constructor(message, status = 400) {
+  constructor(message, status = 400, details = undefined) {
     super(message);
     this.status = status;
+    this.details = details; // optional list of field errors, shown by the /api/integrations responses
   }
 }
 

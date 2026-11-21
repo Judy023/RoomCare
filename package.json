@@ -16,6 +16,7 @@
     "migrate:rename-supervisor-columns": "node migrate-rename-supervisor-columns.js",
     "migrate:integrations": "node migrate-pms-hr-integration.js",
     "seed": "node seed.js",
+    "test": "node --test tests/integration-api.test.js",
     "create:model": "node create.js model",
     "create:controller": "node create.js controller",
     "create:add-middleware": "node create.js middleware",

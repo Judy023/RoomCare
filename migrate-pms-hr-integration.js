@@ -27,6 +27,9 @@ const COLUMNS = {
   Rooms: {
     pmsStatus: { type: DataTypes.STRING(40), allowNull: true },
     pmsStatusAt: { type: DataTypes.DATE, allowNull: true },
+    externalId: { type: DataTypes.STRING(100), allowNull: true },
+    description: { type: DataTypes.TEXT, allowNull: true },
+    externalSyncedAt: { type: DataTypes.DATE, allowNull: true },
   },
 };
 
@@ -58,6 +61,14 @@ const migrate = async () => {
       await qi.addColumn(table, column, spec);
       console.log(`✅ ${table}.${column} added`);
     }
+  }
+
+  // One RoomCare room per front-desk room id (MySQL allows many NULLs, so manually added rooms are unaffected).
+  const rooms = await realTable("Rooms");
+  const indexes = await qi.showIndex(rooms);
+  if (!indexes.some((i) => i.name === "rooms_external_id_unique")) {
+    await qi.addIndex(rooms, ["externalId"], { unique: true, name: "rooms_external_id_unique" });
+    console.log("✅ unique index on Rooms.externalId added");
   }
 
   const tasks = await realTable("cleaning_tasks");

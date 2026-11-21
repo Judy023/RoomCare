@@ -14,6 +14,7 @@ import { Op, UniqueConstraintError } from "sequelize";
 import { sequelize, IntegrationEvent, Room, CleaningTask, SystemLog, User } from "../models/index.js";
 import { RoomStatus, TaskStatus, ACTIVE_TASK_STATUSES, IntegrationStatus as S, TASK_TYPES } from "../models/enums.js";
 import { PMS } from "../config/integrations.js";
+import { mapOutgoingToFrontDesk } from "../config/frontdeskMapping.js";
 import { AppError } from "../utils/http.js";
 import { logAction } from "./logService.js";
 import { notifyRoles } from "./notificationService.js";
@@ -162,7 +163,11 @@ const buildCleaningCompleted = async (task, verification) => {
     eventType: "CleaningCompleted",
     occurredAt: new Date().toISOString(),
     source: "RoomCare",
-    room: { roomNo: room.roomNo, roomCareId: room.id },
+    // Housekeeping state only. RoomCare does not decide occupancy: the front desk confirms no guest is assigned.
+    room: {
+      roomNo: room.roomNo, roomCareId: room.id, externalRoomId: room.externalId || null,
+      housekeepingStatus: room.status === RoomStatus.INSPECTED ? "Inspected" : "Clean",
+    },
     task: {
       code: task.code,
       type: task.taskType,
@@ -205,11 +210,11 @@ const send = async (event) => {
     return "MOCK: recorded only, not sent to a real PMS";
   }
   if (!PMS.outboundUrl) throw new Error("PMS_OUTBOUND_URL is not configured");
-  const body = JSON.stringify(event.payload);
-  const headers = { "Content-Type": "application/json", "X-RoomCare-Event-Id": event.eventId };
-  if (PMS.outboundToken) headers.Authorization = `Bearer ${PMS.outboundToken}`;
+  const body = JSON.stringify(mapOutgoingToFrontDesk(event));
+  const headers = { "Content-Type": "application/json", "X-RoomCare-Event-Id": event.eventId, "Idempotency-Key": event.eventId };
+  if (PMS.outboundToken) headers[PMS.outboundAuthHeader] = `${PMS.outboundAuthScheme ? PMS.outboundAuthScheme + " " : ""}${PMS.outboundToken}`;
   if (PMS.signingSecret) headers["X-RoomCare-Signature"] = "sha256=" + crypto.createHmac("sha256", PMS.signingSecret).update(body).digest("hex");
-  const res = await fetch(PMS.outboundUrl, { method: "POST", headers, body, signal: AbortSignal.timeout(PMS.timeoutMs) });
+  const res = await fetch(PMS.outboundUrl, { method: PMS.outboundMethod, headers, body, signal: AbortSignal.timeout(PMS.timeoutMs) });
   const text = (await res.text()).slice(0, 1000);
   if (!res.ok) throw new Error(`PMS answered HTTP ${res.status}${text ? `: ${text}` : ""}`);
   return `HTTP ${res.status}${text ? ` ${text}` : ""}`;

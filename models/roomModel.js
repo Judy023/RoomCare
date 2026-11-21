@@ -11,5 +11,10 @@ export const Room = sequelize.define("Room", {
   // Availability as last reported by the PMS (added by migrate-pms-hr-integration.js).
   // Only PMS events write these — RoomCare never sets the PMS availability itself.
   pmsStatus: { type: DataTypes.STRING(40) },
-  pmsStatusAt: { type: DataTypes.DATE }
+  pmsStatusAt: { type: DataTypes.DATE },
+  // FrontDeskFlow synchronization (added by migrate-pms-hr-integration.js). externalId is the room's ID in the
+  // front-desk system; it is what makes a repeated room sync an update instead of a duplicate.
+  externalId: { type: DataTypes.STRING(100), unique: true },
+  description: { type: DataTypes.TEXT },
+  externalSyncedAt: { type: DataTypes.DATE }
 });
