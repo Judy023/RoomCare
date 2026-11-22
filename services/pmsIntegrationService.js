@@ -13,13 +13,17 @@ import crypto from "crypto";
 import { Op, UniqueConstraintError } from "sequelize";
 import { sequelize, IntegrationEvent, Room, CleaningTask, SystemLog, User } from "../models/index.js";
 import { RoomStatus, TaskStatus, ACTIVE_TASK_STATUSES, IntegrationStatus as S, TASK_TYPES } from "../models/enums.js";
-import { PMS } from "../config/integrations.js";
+import { PMS, FRONTDESK_API } from "../config/integrations.js";
 import { mapOutgoingToFrontDesk } from "../config/frontdeskMapping.js";
+import { buildCleaningStatusRequest, statusRequestProblems } from "../config/frontdeskApiMapping.js";
+import { postCleaningStatus } from "./frontdeskApiClient.js";
 import { AppError } from "../utils/http.js";
 import { logAction } from "./logService.js";
 import { notifyRoles } from "./notificationService.js";
 import { nextTaskCode } from "./taskService.js";
 
+// Marks RoomVacated events that arrived through FrontDesk's webhook (their event_id is a real FrontDesk event id).
+export const FRONTDESK_WEBHOOK_SOURCE = "FrontDesk webhook";
 const EVENT_ID = /^[A-Za-z0-9._:-]{1,100}$/;
 const ROOM_NO = /^[A-Za-z0-9-]{1,20}$/;
 const PMS_STATUS = /^[A-Z_]{2,40}$/;
@@ -81,6 +85,7 @@ export const handleRoomVacated = async (body) => {
 
   let created = null;
   let room;
+  let becameDirty = false;
   try {
     await sequelize.transaction(async (transaction) => {
       room = await Room.findOne({ where: { roomNo: input.roomNo }, lock: transaction.LOCK.UPDATE, transaction });
@@ -88,6 +93,7 @@ export const handleRoomVacated = async (body) => {
 
       if (VACATE_FROM.includes(room.status)) {
         const from = room.status;
+        becameDirty = true;
         await room.update({ status: RoomStatus.VACANT_DIRTY }, { transaction });
         await SystemLog.create({ userId: null, action: "ROOM_STATUS", entity: "Room", entityId: room.id,
           details: `Room ${room.roomNo}: ${from} → ${RoomStatus.VACANT_DIRTY} (PMS RoomVacated ${input.eventId})` }, { transaction });
@@ -111,6 +117,9 @@ export const handleRoomVacated = async (body) => {
     await reject(event, err);
     throw err instanceof AppError ? err : new AppError("Event could not be processed", 500);
   }
+
+  // Tell FrontDeskFlow the room is now Dirty (not awaited: delivery problems never fail the check-out).
+  if (becameDirty || created) queueCleaningStatus(room, "Dirty");
 
   if (created) {
     await notifyRoles("admin", {
@@ -153,10 +162,7 @@ const backoffMinutes = (attempts) => Math.min(60, 2 ** Math.max(0, attempts - 1)
 const buildCleaningCompleted = async (task, verification) => {
   const room = await Room.findByPk(task.roomId);
   const housekeeper = task.housekeeperId ? await User.findByPk(task.housekeeperId, { attributes: ["id", "name", "staffCode"] }) : null;
-  const vacated = await IntegrationEvent.findOne({
-    where: { system: "PMS", direction: "IN", eventType: "RoomVacated", taskId: task.id, status: S.PROCESSED },
-    order: [["createdAt", "DESC"]],
-  });
+  const relatedEventId = await relatedFrontDeskEventId(task.id);
   const completedAt = task.completedAt || new Date();
   return {
     eventId: `roomcare-cc-${task.id}-${new Date(verification === "PASSED" ? task.inspectedAt || Date.now() : completedAt).getTime()}`,
@@ -171,11 +177,12 @@ const buildCleaningCompleted = async (task, verification) => {
     task: {
       code: task.code,
       type: task.taskType,
+      startedAt: task.startedAt ? new Date(task.startedAt).toISOString() : null,
       completedAt: new Date(completedAt).toISOString(),
-      housekeeper: housekeeper ? { staffCode: housekeeper.staffCode, name: housekeeper.name } : null,
+      housekeeper: housekeeper ? { id: housekeeper.id, staffCode: housekeeper.staffCode, name: housekeeper.name } : null,
     },
     verification, // PENDING = inspection still to come, PASSED = inspection passed
-    relatedEventId: vacated?.eventId || null,
+    relatedEventId,
   };
 };
 
@@ -204,12 +211,97 @@ export const queueCleaningCompleted = async (task, verification = "PENDING") => 
   }
 };
 
+// The FrontDesk RoomVacated event a task answers (its event_id), so FrontDesk can link the task to the right stay.
+// Only events that really came from FrontDesk's webhook qualify; ids from other sources are not FrontDesk event ids.
+const relatedFrontDeskEventId = async (taskId) => {
+  const vacated = await IntegrationEvent.findOne({
+    where: { system: "PMS", direction: "IN", eventType: "RoomVacated", taskId, status: S.PROCESSED },
+    order: [["createdAt", "DESC"]],
+  });
+  return vacated?.payload?.source === FRONTDESK_WEBHOOK_SOURCE ? vacated.eventId : null;
+};
+
+// Queues a housekeeping status change for FrontDesk (Dirty → PENDING, In Progress → IN_PROGRESS) and tries to deliver it
+// right away. "Clean" and "Inspected" go out through queueCleaningCompleted, which carries the inspection details.
+// FrontDesk identifies the work by task id (external_task_id), so nothing is queued while the room has no cleaning task;
+// the Dirty/PENDING announcement is made when the task exists, once per task.
+// Never throws: a failed delivery must not undo the work — it is retried and shown on the Integrations page.
+export const queueCleaningStatus = async (room, housekeepingStatus) => {
+  if (PMS.mode === "disabled") return null;
+  try {
+    const task = await CleaningTask.findOne({ where: { roomId: room.id, status: ACTIVE_TASK_STATUSES }, order: [["id", "DESC"]] });
+    if (!task) return null;
+    const slug = housekeepingStatus.replace(/\W+/g, "").toLowerCase();
+    if (housekeepingStatus === "Dirty") {
+      const already = await IntegrationEvent.count({
+        where: { system: "PMS", direction: "OUT", eventType: "CleaningStatusChanged", taskId: task.id, eventId: { [Op.like]: `roomcare-cs-${task.id}-dirty-%` } },
+      });
+      if (already) return null;
+    }
+    const now = new Date();
+    const housekeeper = task.housekeeperId ? await User.findByPk(task.housekeeperId, { attributes: ["id", "name", "staffCode"] }) : null;
+    const payload = {
+      eventId: `roomcare-cs-${task.id}-${slug}-${now.getTime()}`,
+      eventType: "CleaningStatusChanged",
+      occurredAt: now.toISOString(),
+      source: "RoomCare",
+      room: { roomNo: room.roomNo, roomCareId: room.id, externalRoomId: room.externalId || null, housekeepingStatus },
+      task: {
+        code: task.code, type: task.taskType,
+        startedAt: task.startedAt ? new Date(task.startedAt).toISOString() : null, completedAt: null,
+        housekeeper: housekeeper ? { id: housekeeper.id, staffCode: housekeeper.staffCode, name: housekeeper.name } : null,
+      },
+      verification: null,
+      relatedEventId: await relatedFrontDeskEventId(task.id),
+    };
+    let event;
+    try {
+      event = await IntegrationEvent.create({
+        system: "PMS", direction: "OUT", eventType: "CleaningStatusChanged", eventId: payload.eventId,
+        occurredAt: now, payload, status: S.PENDING, nextAttemptAt: now, roomId: room.id, taskId: task.id,
+      });
+    } catch (err) {
+      if (err instanceof UniqueConstraintError) return null;
+      throw err;
+    }
+    await logAction(null, "PMS_EVENT_QUEUED", "IntegrationEvent", event.id, `CleaningStatusChanged ${task.code} Room ${room.roomNo} → ${housekeepingStatus}`);
+    return await deliver(event.id);
+  } catch (err) {
+    console.error("❌ Could not queue CleaningStatusChanged:", err.message);
+    return null;
+  }
+};
+
+// Something retrying cannot fix (the request itself is wrong or not configured).
+const permanent = (err) => Object.assign(err, { retryable: false });
+
 const send = async (event) => {
   if (PMS.mode === "mock") {
     if (PMS.mockFail) throw new Error("Mock PMS failure (PMS_MOCK_FAIL=1)");
-    return "MOCK: recorded only, not sent to a real PMS";
+    let preview = "";
+    try {
+      const req = buildCleaningStatusRequest(event);
+      preview = req.skip ? ` (would skip: ${req.skip})` : ` (would POST ${FRONTDESK_API.paths.cleaningStatus} ${JSON.stringify(req.body)})`;
+    } catch (err) { preview = ` (request problem: ${err.message})`; }
+    return `MOCK: recorded only, not sent to a real PMS${preview}`.slice(0, 1000);
   }
-  if (!PMS.outboundUrl) throw new Error("PMS_OUTBOUND_URL is not configured");
+  // FrontDesk's real API (POST /housekeeping/cleaning-status), when its base URL is configured.
+  if (FRONTDESK_API.baseUrl) {
+    const problems = statusRequestProblems();
+    if (problems.length) throw permanent(new Error(problems.join("; ")));
+    let req;
+    try { req = buildCleaningStatusRequest(event); } catch (err) { throw permanent(err); }
+    if (req.skip) return `SKIPPED: ${req.skip}`;
+    try {
+      const res = await postCleaningStatus(req.body, req.key);
+      return `HTTP ${res.status}${res.replayed ? " (replayed)" : ""}${res.text ? ` ${res.text.slice(0, 1000)}` : ""}`;
+    } catch (err) {
+      if (err.alreadyDone) return `ALREADY RECORDED (${err.code}): treated as delivered`; // document §9.2: "treat as done"
+      throw err;
+    }
+  }
+  // Legacy single-URL push (before FrontDesk's endpoints were known).
+  if (!PMS.outboundUrl) throw permanent(new Error("FRONTDESK_API_BASE_URL (or the legacy PMS_OUTBOUND_URL) is not configured"));
   const body = JSON.stringify(mapOutgoingToFrontDesk(event));
   const headers = { "Content-Type": "application/json", "X-RoomCare-Event-Id": event.eventId, "Idempotency-Key": event.eventId };
   if (PMS.outboundToken) headers[PMS.outboundAuthHeader] = `${PMS.outboundAuthScheme ? PMS.outboundAuthScheme + " " : ""}${PMS.outboundToken}`;
@@ -235,7 +327,8 @@ export const deliver = async (id) => {
     await event.update({ status: S.SENT, attempts, response, lastError: null, nextAttemptAt: null, processedAt: new Date() });
     await logAction(null, "PMS_EVENT_SENT", "IntegrationEvent", event.id, `${event.eventType} ${event.eventId}${PMS.mode === "mock" ? " (mock)" : ""}`);
   } catch (err) {
-    const giveUp = attempts >= PMS.maxAttempts;
+    // A request FrontDesk rejects as wrong (any 4xx except the retryable ones) is never retried unchanged.
+    const giveUp = attempts >= PMS.maxAttempts || err.retryable === false;
     await event.update({
       status: giveUp ? S.FAILED : S.PENDING, attempts, lastError: err.message,
       nextAttemptAt: giveUp ? null : new Date(Date.now() + backoffMinutes(attempts) * 60000),

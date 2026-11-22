@@ -3,6 +3,7 @@ import { RoomStatus, roomStatusLabel, ROOM_STATUSES, ADMIN_ROOM_STATUSES, ROOM_T
 import { AppError, toPlain } from "../utils/http.js";
 import { logAction } from "./logService.js";
 import { notifyRoles } from "./notificationService.js";
+import { queueCleaningStatus } from "./pmsIntegrationService.js";
 
 const label = roomStatusLabel;
 
@@ -74,6 +75,9 @@ export const setStatus = async (room, status, userId, reason = "") => {
   room.status = status;
   await room.save();
   await logAction(userId, "ROOM_STATUS", "Room", room.id, `Room ${room.roomNo}: ${from} → ${status}${reason ? ` (${reason})` : ""}`);
+  // Keep FrontDeskFlow informed of Dirty / In Progress. Not awaited: housekeeping never waits on, or fails because of, it.
+  const notify = { [RoomStatus.VACANT_DIRTY]: "Dirty", [RoomStatus.CLEANING]: "In Progress" }[status];
+  if (notify) queueCleaningStatus(room, notify);
   return room;
 };
 

@@ -5,7 +5,7 @@ import { AppError, startOfToday, toPlain } from "../utils/http.js";
 import { logAction } from "./logService.js";
 import { notifyUser, notifyRoles } from "./notificationService.js";
 import { getRoom, setStatus } from "./roomService.js";
-import { queueCleaningCompleted } from "./pmsIntegrationService.js";
+import { queueCleaningCompleted, queueCleaningStatus } from "./pmsIntegrationService.js";
 import { PMS } from "../config/integrations.js";
 import { listStaff } from "./userService.js";
 
@@ -127,6 +127,8 @@ export const assignTask = async ({ roomId, housekeeperId, taskType, priority, no
     });
   }
   await logAction(admin.id, previousId ? "TASK_REASSIGN" : "TASK_ASSIGN", "CleaningTask", task.id, `${task.code} Room ${room.roomNo} → ${housekeeper.name}${task.source === "PMS" ? " (PMS check-out task)" : ""}`);
+  // Tell FrontDesk a cleaning task exists for this vacated room (PENDING). Not awaited; sent once per task.
+  if (room.status === RoomStatus.VACANT_DIRTY) queueCleaningStatus(room, "Dirty");
   if (previousId) {
     await notifyUser(previousId, {
       title: `Task reassigned: Room ${room.roomNo}`,

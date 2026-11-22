@@ -7,6 +7,7 @@ import { TaskStatus } from "../models/enums.js";
 import { wrap, toPlain, AppError } from "../utils/http.js";
 import { PMS, HR } from "../config/integrations.js";
 import { handleRoomVacated, handleRoomStatusUpdated } from "../services/pmsIntegrationService.js";
+import { verifyWebhook, handleWebhook } from "../services/frontdeskWebhookService.js";
 import { jobLogs, acknowledge, workSummary } from "../services/hrExportService.js";
 import { logAction } from "../services/logService.js";
 
@@ -68,6 +69,13 @@ export const pmsWebhook = wrap(async (req, res) => {
   else if (event === "CHECK_IN") await checkIn(room, null, "PMS");
   else throw new AppError('event must be "CHECK_OUT" or "CHECK_IN"');
   res.json({ ok: true, roomNo: room.roomNo, status: room.status });
+});
+
+// POST /api/frontdesk/webhook — events FrontDesk sends (RoomVacated, RoomStatusChanged, RoomCleaned).
+// Authenticated by the signature headers X-PMS-Timestamp / X-PMS-Signature over the raw body (kept by index.js).
+export const frontdeskWebhook = wrap(async (req, res) => {
+  verifyWebhook({ raw: req.rawBody, timestamp: req.get("X-PMS-Timestamp"), signature: req.get("X-PMS-Signature") });
+  res.json(await handleWebhook(req.rawBody));
 });
 
 // HR/Payroll API — Authorization: Bearer <HR_API_TOKEN> (or X-HR-Token). Read-only except acknowledgements.

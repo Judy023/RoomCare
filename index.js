@@ -30,6 +30,7 @@ import session from "express-session";
 import flash from "connect-flash";
 import router from "./routes/index.js";
 import { startIntegrationWorker } from "./services/pmsIntegrationService.js";
+import { startFrontdeskSyncWorker } from "./services/frontdeskSyncService.js";
 import fs from 'fs';
 import hbs from "hbs";
 import "./helpers/hbs.js";
@@ -42,7 +43,8 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+// The FrontDesk webhook is signed over the exact bytes it sends, so keep the raw body for that one route.
+app.use(express.json({ verify: (req, res, buf) => { if (req.originalUrl.startsWith("/api/frontdesk/webhook")) req.rawBody = buf; } }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(process.cwd(), "public")));
 
@@ -133,6 +135,7 @@ export const startServer = (port = PORT) => {
     const server = app.listen(port, () => {
       console.log(`🔥 XianFire running at http://localhost:${port}`);
       startIntegrationWorker();
+      startFrontdeskSyncWorker();
       resolve(server);
     });
     server.on("error", reject);

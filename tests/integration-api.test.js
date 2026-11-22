@@ -143,10 +143,14 @@ test("4+5. housekeeping completes -> Clean, and a notification for FrontDeskFlow
   assert.ok(ev, "outgoing event queued");
   const upd = await waitFor(async () => {
     const r = await call("GET", "/frontdesk/room-status-updates");
-    return r.body.data.length && r.body.data[0].delivery.status === "SENT" ? r : null;
+    const done = r.body.data.find((x) => x.eventType === "CleaningCompleted");
+    return done && done.delivery.status === "SENT" ? r : null;
   });
   assert.ok(upd, "event delivered (mock)");
-  const item = upd.body.data[0];
+  // Dirty and In Progress changes are queued too; the Clean one is the CleaningCompleted event.
+  const statuses = upd.body.data.map((x) => x.payload.room.housekeepingStatus);
+  assert.ok(statuses.includes("Dirty") && statuses.includes("In Progress") && statuses.includes("Clean"), `status updates: ${statuses}`);
+  const item = upd.body.data.find((x) => x.eventType === "CleaningCompleted");
   assert.equal(item.eventType, "CleaningCompleted");
   assert.equal(item.payload.room.externalRoomId, "FDF-102");
   assert.equal(item.payload.room.housekeepingStatus, "Clean");

@@ -9,7 +9,8 @@ Base path: `/api/integrations`. Run the tests with `npm test`.
 |---|---|---|
 | FrontDeskFlow → RoomCare: room sync, room update, checkout | inbound | **Implemented and tested** in RoomCare. Not yet connected to a real FrontDeskFlow. |
 | RoomCare → FrontDeskFlow: `room-status-updates`, `cleaned-rooms` (FrontDeskFlow reads) | outbound, pull | **Implemented and tested.** |
-| RoomCare → FrontDeskFlow: push of `CleaningCompleted` | outbound, push | **Prepared, not connected.** Runs in `mock` mode: events are queued and marked sent (mock), nothing leaves the server. Needs FrontDeskFlow's real URL, auth and payload format. |
+| RoomCare → FrontDeskFlow: push of housekeeping status (Dirty, In Progress, Clean, Inspected) | outbound, push | **Implemented against FrontDeskFlow's `POST /housekeeping/cleaning-status`, not connected.** Runs in `mock` mode: events are queued and marked sent (mock), nothing leaves the server. Needs the real base URL, auth and request body. See `docs/frontdeskflow-api.md`. |
+| FrontDeskFlow → RoomCare: room sync via `GET /housekeeping/rooms` and `/rooms/{roomNumber}` | RoomCare pulls | **Implemented, not connected.** Needs the real base URL, auth and response format. See `docs/frontdeskflow-api.md`. |
 | StaffPay → RoomCare: job logs, work hours, performance | inbound, pull | **Implemented and tested.** Not yet connected to a real StaffPay. |
 | StaffPay: overtime | inbound, pull | Endpoint exists but always returns an empty list: RoomCare does not record overtime. |
 
@@ -118,7 +119,7 @@ Query: `housekeeping_status` (Dirty|In Progress|Clean|Inspected), `occupancy_sta
 ## RoomCare → FrontDeskFlow
 
 ### GET `/api/integrations/frontdesk/room-status-updates`
-The notifications RoomCare has prepared when cleaning finishes (event `CleaningCompleted`), oldest first, so FrontDeskFlow can poll without missing any.
+The notifications RoomCare has prepared, oldest first, so FrontDeskFlow can poll without missing any: `CleaningCompleted` when cleaning finishes (Clean / Inspected) and `CleaningStatusChanged` for Dirty and In Progress. Read `payload.room.housekeepingStatus` for the status.
 Query: `after_id` (cursor; pass `meta.nextCursor` from the last call), `since` (ISO), `delivery_status` (PENDING|SENDING|SENT|FAILED), `limit` (≤200).
 ```json
 { "success": true, "data": [ { "updateId": 7, "eventId": "roomcare-cc-5-1795232000000", "eventType": "CleaningCompleted",

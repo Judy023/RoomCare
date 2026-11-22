@@ -47,6 +47,31 @@ PMS.outboundMethod = mode(process.env.PMS_OUTBOUND_METHOD, ["post", "put", "patc
 PMS.outboundAuthHeader = process.env.PMS_OUTBOUND_AUTH_HEADER || "Authorization";
 PMS.outboundAuthScheme = process.env.PMS_OUTBOUND_AUTH_SCHEME ?? "Bearer"; // "" sends the bare token (API-key style)
 
+// ── FrontDesk API (contract: "Connecting RoomCare to the FrontDesk", ROOM_SYNC.pdf, 2026-11-21) ───────
+//   POST /housekeeping/cleaning-status   RoomCare → FrontDesk  cleaning status (signed, Idempotency-Key)
+//   GET  /housekeeping/rooms             RoomCare reads all rooms
+//   GET  /housekeeping/rooms/{room_number}                      one room
+// Base URL is https://<frontdesk-host>/api/v1/integrations (the host is still to be provided by FrontDesk).
+// Authentication: API key in X-Api-Key; every POST is signed with the inbound secret (see services/frontdeskApiClient.js).
+// Webhooks FrontDesk sends to RoomCare are verified with the webhook secret (see services/frontdeskWebhookService.js).
+const envInt = (v, fallback) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : fallback);
+export const FRONTDESK_API = {
+  baseUrl: (process.env.FRONTDESK_API_BASE_URL || "").trim().replace(/\/+$/, ""),
+  token: process.env.FRONTDESK_API_TOKEN || "",                       // FrontDesk's HOUSEKEEPING_API_KEY
+  authHeader: process.env.FRONTDESK_API_AUTH_HEADER || "X-Api-Key",   // "Authorization" + scheme "Bearer" also works
+  authScheme: process.env.FRONTDESK_API_AUTH_SCHEME ?? "",            // "" sends the bare key
+  signingSecret: process.env.FRONTDESK_API_SIGNING_SECRET || "",      // FrontDesk's HOUSEKEEPING_INBOUND_SECRET (signs our POSTs)
+  webhookSecret: process.env.FRONTDESK_WEBHOOK_SECRET || "",          // FrontDesk's HOUSEKEEPING_WEBHOOK_SECRET (verifies its webhooks)
+  timeoutMs: envInt(process.env.FRONTDESK_API_TIMEOUT_MS, PMS.timeoutMs),
+  paths: {
+    cleaningStatus: process.env.FRONTDESK_PATH_CLEANING_STATUS || "/housekeeping/cleaning-status",
+    rooms: process.env.FRONTDESK_PATH_ROOMS || "/housekeeping/rooms",
+    room: process.env.FRONTDESK_PATH_ROOM || "/housekeeping/rooms/{roomNumber}",
+  },
+  // Minutes between automatic room syncs. 0 (default) = no background sync; run `npm run sync:frontdesk` instead.
+  syncIntervalMinutes: Number(process.env.FRONTDESK_SYNC_INTERVAL_MINUTES) || 0,
+};
+
 // Safe summary for the admin screen: says what is configured, never the values.
 export const integrationConfigSummary = () => ({
   pms: {

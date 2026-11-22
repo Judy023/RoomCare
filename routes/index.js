@@ -46,7 +46,7 @@ import {
 } from "../controllers/adminController.js";
 import {
   apiRooms, apiTaskStatus, apiCreateWorkOrder, apiNotifications, apiSendNotification, pmsWebhook,
-  hrJobLogs, hrAcknowledge, hrWorkSummary,
+  hrJobLogs, hrAcknowledge, hrWorkSummary, frontdeskWebhook,
 } from "../controllers/apiController.js";
 
 import integrationRoutes from "./integrations.js";
@@ -55,6 +55,8 @@ const router = express.Router();
 
 // PMS webhook and HR/Payroll API authenticate with their own tokens, not a session.
 router.post("/api/pms/events", pmsWebhook);
+// FrontDesk's signed webhooks (RoomVacated, RoomStatusChanged, RoomCleaned).
+router.post("/api/frontdesk/webhook", frontdeskWebhook);
 router.get("/api/hr/job-logs", hrJobLogs);
 router.post("/api/hr/job-logs/ack", hrAcknowledge);
 router.get("/api/hr/work-summary", hrWorkSummary);
