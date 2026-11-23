@@ -42,6 +42,13 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProd = process.env.NODE_ENV === "production";
+if (isProd && !process.env.SESSION_SECRET) {
+  console.error("❌ SESSION_SECRET must be set when NODE_ENV=production.");
+  process.exit(1);
+}
+// Behind Hostinger's HTTPS proxy: needed for secure cookies and correct client IPs.
+if (isProd) app.set("trust proxy", 1);
 
 // The FrontDesk webhook is signed over the exact bytes it sends, so keep the raw body for that one route.
 app.use(express.json({ verify: (req, res, buf) => { if (req.originalUrl.startsWith("/api/frontdesk/webhook")) req.rawBody = buf; } }));
@@ -52,7 +59,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || "xianfire-secret-key",
   resave: false,
   saveUninitialized: false,
-  cookie: { httpOnly: true, sameSite: "lax", maxAge: 12 * 60 * 60 * 1000 }
+  cookie: { httpOnly: true, sameSite: "lax", secure: isProd, maxAge: 12 * 60 * 60 * 1000 }
 }));
 app.use(flash());
 

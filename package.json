@@ -2,13 +2,15 @@
   "name": "RoomCare",
   "version": "1.0.0",
   "description": "RoomCare: Housekeeping and Hotel Maintenance Management System (XianFire Framework)",
-  "main": "index.js",
+  "main": "server.js",
+  "engines": { "node": ">=20.12" },
   "type": "module",
   "bin": {
     "xian": "./bin/xian.js"
   },
   "scripts": {
-    "start": "node index.js",
+    "start": "node server.js",
+    "setup:production": "node setup-production.js",
     "dev": "nodemon index.js",
     "xian": "nodemon index.js",
     "migrate": "node migrate.js",
