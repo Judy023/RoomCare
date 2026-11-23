@@ -4,6 +4,7 @@ import { AppError, toPlain } from "../utils/http.js";
 import { logAction } from "./logService.js";
 import { notifyRoles } from "./notificationService.js";
 import { queueCleaningStatus } from "./pmsIntegrationService.js";
+import { connectionState, assertLocalRoomManagement, MANAGED_BY_FRONTDESK } from "./roomIntegrationService.js";
 
 const label = roomStatusLabel;
 
@@ -19,12 +20,15 @@ export const findByRoomNo = async (roomNo) => {
   return room;
 };
 
-export const listRooms = (where = {}) => Room.findAll({ where, order: [["floor", "ASC"], ["roomNo", "ASC"]] });
+// Archived rooms (deleted in FrontDeskFlow) are kept for their history but are not offered for new work.
+export const listRooms = (where = {}, { includeArchived = false } = {}) =>
+  Room.findAll({ where: includeArchived ? where : { ...where, archivedAt: null }, order: [["floor", "ASC"], ["roomNo", "ASC"]] });
 
 // Room status board: every room with its open task and outstanding work orders, grouped by floor.
-export const board = async (statusFilter) => {
+export const board = async (statusFilter, { includeArchived = false } = {}) => {
+  const active = includeArchived ? {} : { archivedAt: null };
   const rooms = toPlain(await Room.findAll({
-    where: statusFilter && ROOM_STATUSES.includes(statusFilter) ? { status: statusFilter } : {},
+    where: { ...active, ...(statusFilter && ROOM_STATUSES.includes(statusFilter) ? { status: statusFilter } : {}) },
     include: [
       {
         model: CleaningTask, as: "tasks", required: false,
@@ -40,7 +44,7 @@ export const board = async (statusFilter) => {
     order: [["floor", "ASC"], ["roomNo", "ASC"]],
   }));
 
-  const all = await Room.findAll({ attributes: ["status"], raw: true });
+  const all = await Room.findAll({ where: active, attributes: ["status"], raw: true });
   const counts = ROOM_STATUSES.map((status) => ({ status, count: all.filter((r) => r.status === status).length }));
 
   const floors = [];
@@ -111,6 +115,7 @@ const validateRoom = ({ roomNo, type, floor }) => {
 };
 
 export const createRoom = async (data, userId) => {
+  await assertLocalRoomManagement();
   validateRoom(data);
   const room = await Room.create({
     roomNo: String(data.roomNo).trim(), type: data.type, floor: Number(data.floor),
@@ -120,8 +125,17 @@ export const createRoom = async (data, userId) => {
   return room;
 };
 
+// Fields that describe the room itself. Once FrontDeskFlow is the authority only housekeeping status may be changed here.
+const RECORD_FIELDS = { roomNo: (r) => r.roomNo, type: (r) => r.type, floor: (r) => String(r.floor), notes: (r) => r.notes || "" };
+
 export const updateRoom = async (id, data, userId) => {
   const room = await getRoom(id);
+  if ((await connectionState()).locked) {
+    const changed = Object.entries(RECORD_FIELDS).filter(([k, current]) => data[k] !== undefined && String(data[k]).trim() !== current(room));
+    if (changed.length) throw new AppError(MANAGED_BY_FRONTDESK + ` (${changed.map(([k]) => k).join(", ")} cannot be changed here.)`, 403);
+    if (data.status && ADMIN_ROOM_STATUSES.includes(data.status)) await setStatus(room, data.status, userId, "admin override");
+    return room;
+  }
   validateRoom({ roomNo: room.roomNo, ...data });
   room.type = data.type;
   room.floor = Number(data.floor);
@@ -132,6 +146,7 @@ export const updateRoom = async (id, data, userId) => {
 };
 
 export const deleteRoom = async (id, userId) => {
+  await assertLocalRoomManagement();
   const room = await getRoom(id);
   const history = (await CleaningTask.count({ where: { roomId: id } })) + (await WorkOrder.count({ where: { roomId: id } }));
   if (history) throw new AppError(`Room ${room.roomNo} has task or work order history and cannot be deleted.`);

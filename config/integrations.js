@@ -72,6 +72,13 @@ export const FRONTDESK_API = {
   syncIntervalMinutes: Number(process.env.FRONTDESK_SYNC_INTERVAL_MINUTES) || 0,
 };
 
+// Who may create, edit and delete room records.
+//   auto       (default) RoomCare manages rooms itself until FrontDeskFlow has successfully delivered rooms; from then
+//              on FrontDeskFlow is the only authority and RoomCare refuses room add / edit / delete.
+//   frontdesk  FrontDeskFlow is the authority from the start (set this when the integration goes live).
+//   local      RoomCare manages rooms itself even if FrontDeskFlow has synced (development / testing only).
+export const ROOM_AUTHORITY = mode(process.env.FRONTDESK_ROOM_AUTHORITY, ["auto", "frontdesk", "local"], "auto");
+
 // Safe summary for the admin screen: says what is configured, never the values.
 export const integrationConfigSummary = () => ({
   pms: {

@@ -30,6 +30,7 @@ const COLUMNS = {
     externalId: { type: DataTypes.STRING(100), allowNull: true },
     description: { type: DataTypes.TEXT, allowNull: true },
     externalSyncedAt: { type: DataTypes.DATE, allowNull: true },
+    archivedAt: { type: DataTypes.DATE, allowNull: true },
   },
 };
 

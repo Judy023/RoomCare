@@ -30,7 +30,7 @@ export const awaitingRepair = async () =>
 
 export const pendingRooms = async () => {
   const rooms = await Room.findAll({
-    where: { status: INSPECTABLE },
+    where: { status: INSPECTABLE, archivedAt: null },
     include: [
       { model: CleaningTask, as: "tasks", required: false, where: { status: [...ACTIVE_TASK_STATUSES, TaskStatus.DONE] }, include: [{ model: User, as: "housekeeper", attributes: ["id", "name"] }] },
       { model: WorkOrder, as: "workOrders", required: false, where: { status: [...ACTIVE_WO_STATUSES, WorkOrderStatus.RESOLVED] } },
@@ -47,7 +47,7 @@ export const pendingRooms = async () => {
 // `ready` = it can be inspected now; otherwise `waitingFor` says what is still open.
 export const inspectionQueue = async () => {
   const rooms = await Room.findAll({
-    where: { status: INSPECTABLE },
+    where: { status: INSPECTABLE, archivedAt: null },
     include: [
       { model: CleaningTask, as: "tasks", required: false, where: { status: [...ACTIVE_TASK_STATUSES, TaskStatus.DONE] } },
       { model: WorkOrder, as: "workOrders", required: false, where: { status: [...ACTIVE_WO_STATUSES, WorkOrderStatus.RESOLVED] } },
@@ -69,7 +69,7 @@ export const inspectionQueue = async () => {
 // Occupied rooms with a resolved repair: they can only be inspected after the guest checks out.
 export const awaitingCheckout = () =>
   Room.findAll({
-    where: { status: RoomStatus.OCCUPIED },
+    where: { status: RoomStatus.OCCUPIED, archivedAt: null },
     include: [{ model: WorkOrder, as: "workOrders", required: true, where: { status: WorkOrderStatus.RESOLVED } }],
     order: [["floor", "ASC"], ["roomNo", "ASC"]],
   });

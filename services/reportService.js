@@ -20,7 +20,7 @@ const bars = (keys, countFn) => {
 export const kpis = async (days = 30) => {
   const since = new Date(Date.now() - days * 864e5);
 
-  const rooms = await Room.findAll({ attributes: ["status"], raw: true });
+  const rooms = await Room.findAll({ where: { archivedAt: null }, attributes: ["status"], raw: true });
   const tasks = toPlain(await CleaningTask.findAll({
     where: { createdAt: { [Op.gte]: since } },
     include: [{ model: User, as: "housekeeper", attributes: ["id", "name"] }],

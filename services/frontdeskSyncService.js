@@ -64,6 +64,8 @@ const applyRoom = async (n, now) => {
     const set = (k, v) => { if (v !== undefined && v !== room[k]) { changes[k] = v; changed = true; } };
 
     if (!room.externalId) { changes.externalId = n.externalId; action = "linked"; }
+    // FrontDeskFlow lists the room again, so it exists there: bring back a room that had been archived.
+    if (room.archivedAt) { changes.archivedAt = null; changed = true; }
     if (matchedByExternalId && n.roomNumber !== room.roomNo) {
       const clash = await Room.findOne({ where: { roomNo: n.roomNumber, id: { [Op.ne]: room.id } }, transaction });
       if (clash) throw new Error(`room number ${n.roomNumber} is already used by another room`);

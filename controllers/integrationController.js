@@ -28,6 +28,10 @@ export const frontdeskUpdateRoom = handler(async (req) => {
   const r = await fd.updateSyncedRoom(req.params.externalRoomId, req.body, key(req));
   return { data: r.room, extra: { duplicate: r.duplicate, ...(r.ignored?.length ? { ignoredFields: r.ignored } : {}) } };
 });
+export const frontdeskArchiveRoom = handler(async (req) => {
+  const r = await fd.archiveSyncedRoom(req.params.externalRoomId, req.body, key(req));
+  return { data: r.room, extra: { duplicate: r.duplicate, alreadyArchived: Boolean(r.alreadyArchived), openCleaningTasks: r.openTasks } };
+});
 export const frontdeskCheckout = handler(async (req) => {
   const r = await fd.handleCheckout(req.body, key(req));
   return { status: r.taskCreated ? 201 : 200, data: r };

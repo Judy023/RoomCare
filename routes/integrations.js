@@ -13,6 +13,7 @@ frontdesk.post("/rooms", c.frontdeskCreateRoom);
 frontdesk.get("/rooms", c.frontdeskListRooms);
 frontdesk.get("/rooms/:externalRoomId", c.frontdeskGetRoom);
 frontdesk.put("/rooms/:externalRoomId", c.frontdeskUpdateRoom);
+frontdesk.delete("/rooms/:externalRoomId", c.frontdeskArchiveRoom);
 frontdesk.post("/checkout", c.frontdeskCheckout);
 // RoomCare → FrontDeskFlow (FrontDeskFlow reads these; the push side is configured in config/integrations.js)
 frontdesk.get("/room-status-updates", c.frontdeskStatusUpdates);

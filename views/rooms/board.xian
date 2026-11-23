@@ -6,6 +6,7 @@
     <p class="page-sub flex items-center gap-2"><span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-leaf/50"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-leaf"></span></span>{{board.shown}} rooms · refreshed {{formatTime now}} · auto-refreshes every minute</p>
   </div>
 </div>
+{{> frontdeskStatus}}
 <div class="mb-7 flex flex-wrap gap-2 text-xs">
     <a href="/rooms" class="rounded-full border px-3.5 py-1.5 font-semibold transition {{#if status}}border-line bg-white text-moss hover:bg-sage{{else}}border-forest bg-forest text-white{{/if}}">All</a>
     {{#each board.counts}}
@@ -13,6 +14,7 @@
     <a href="/rooms?status={{status}}" class="rounded-full border px-3.5 py-1.5 font-semibold transition hover:shadow-soft {{roomColor status}} {{#if (eq status @root.status)}}ring-2 ring-forest ring-offset-2 ring-offset-ivory{{/if}}">{{roomLabel status}} <span class="ml-1 rounded-full bg-white/70 px-1.5 tabular-nums">{{count}}</span></a>
     {{/unless}}
     {{/each}}
+    {{#if integration.linkedRooms}}<a href="/rooms{{#unless showArchived}}?archived=1{{/unless}}" class="rounded-full border border-line bg-white px-3.5 py-1.5 font-semibold text-moss transition hover:bg-sage">{{#if showArchived}}Hide archived{{else}}Show archived{{/if}}</a>{{/if}}
 </div>
 
 {{#each board.floors}}
@@ -24,6 +26,7 @@
       <a href="/rooms/{{id}}" class="block flex-1">
         <div class="flex items-start justify-between">
           <span class="font-display text-2xl font-semibold leading-none">{{roomNo}}</span>
+          {{#if archivedAt}}<span class="rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase" title="Deleted in FrontDeskFlow">Archived</span>{{/if}}
           {{#if workOrders.length}}<span class="rounded-full bg-white/70 px-1.5 py-0.5 text-[11px] font-semibold" title="Work orders">🔧 {{workOrders.length}}</span>{{/if}}
         </div>
         <div class="mt-1 text-xs opacity-80">{{type}}</div>

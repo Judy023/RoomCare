@@ -41,7 +41,7 @@ import { reportsPage, workOrdersCsvExport, jobLogsCsvExport } from "../controlle
 import { notificationsPage, openNotification, readAllNotifications } from "../controllers/notificationController.js";
 import { inventoryPage, createItemAction, updateItemAction, restockItemAction } from "../controllers/inventoryController.js";
 import {
-  usersPage, createUserAction, updateUserAction, roomsPage, createRoomAction, updateRoomAction, deleteRoomAction, logsPage,
+  usersPage, createUserAction, updateUserAction, roomsPage, syncRoomsAction, createRoomAction, updateRoomAction, deleteRoomAction, logsPage,
   integrationsPage, retryIntegrationAction,
 } from "../controllers/adminController.js";
 import {
@@ -136,6 +136,7 @@ router.post("/admin/users", admin, createUserAction);
 router.post("/admin/users/:id", admin, updateUserAction);
 router.get("/admin/rooms", admin, roomsPage);
 router.post("/admin/rooms", admin, createRoomAction);
+router.post("/admin/rooms/sync", admin, syncRoomsAction);
 router.post("/admin/rooms/:id", admin, updateRoomAction);
 router.post("/admin/rooms/:id/delete", admin, deleteRoomAction);
 router.get("/admin/logs", admin, logsPage);

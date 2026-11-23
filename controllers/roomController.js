@@ -3,10 +3,12 @@ import { inspectionState } from "../services/inspectionService.js";
 import { assignFormOptions } from "../services/taskService.js";
 import { ADMIN_ROOM_STATUSES, RoomStatus, TaskStatus, ACTIVE_TASK_STATUSES } from "../models/enums.js";
 import { wrap, toPlain } from "../utils/http.js";
+import { connectionState } from "../services/roomIntegrationService.js";
 
 export const boardPage = wrap(async (req, res) => {
   const status = ADMIN_ROOM_STATUSES.includes(req.query.status) ? req.query.status : "";
-  const roomBoard = await board(status);
+  const showArchived = req.query.archived === "1";
+  const roomBoard = await board(status, { includeArchived: showArchived });
   // Occupied and out-of-order rooms are not shown on the board (nor any floor left empty by that).
   roomBoard.floors = roomBoard.floors
     .map((f) => ({ ...f, rooms: f.rooms.filter((r) => ADMIN_ROOM_STATUSES.includes(r.status)) }))
@@ -16,6 +18,9 @@ export const boardPage = wrap(async (req, res) => {
     title: "Room Status Board",
     board: roomBoard,
     status,
+    showArchived,
+    integration: await connectionState(),
+    canSync: req.user.role === "admin",
     now: new Date(),
     canCheckInOut: req.user.role === "admin",
   });
@@ -34,6 +39,7 @@ export const roomPage = wrap(async (req, res) => {
     title: `Room ${room.roomNo}`,
     room: toPlain(room),
     canCheckInOut: role === "admin",
+    integration: await connectionState(),
     canAssign,
     reassign: Boolean(openTask?.housekeeperId),
     ...(canAssign ? await assignFormOptions() : {}),

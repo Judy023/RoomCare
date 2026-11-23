@@ -6,6 +6,8 @@ import { wrap, toPlain } from "../utils/http.js";
 import { integrationOverview, retryEvent } from "../services/pmsIntegrationService.js";
 import { hrExportStats } from "../services/hrExportService.js";
 import { integrationConfigSummary } from "../config/integrations.js";
+import { connectionState } from "../services/roomIntegrationService.js";
+import { syncAllRooms } from "../services/frontdeskSyncService.js";
 
 export const usersPage = wrap(async (req, res) => {
   res.render("admin/users", { title: "Manage Users", users: toPlain(await listUsers()), roles: ROLES });
@@ -25,8 +27,17 @@ export const updateUserAction = wrap(async (req, res) => {
 
 export const roomsPage = wrap(async (req, res) => {
   // Occupied and out-of-order rooms are left out: their status is driven by check-in and work orders, not by the admin.
-  const rooms = toPlain(await listRooms()).filter((r) => ADMIN_ROOM_STATUSES.includes(r.status));
-  res.render("admin/rooms", { title: "Manage Rooms", rooms, statuses: ADMIN_ROOM_STATUSES, types: ROOM_TYPES });
+  const rooms = toPlain(await listRooms({}, { includeArchived: true })).filter((r) => ADMIN_ROOM_STATUSES.includes(r.status));
+  const integration = await connectionState();
+  res.render("admin/rooms", { title: integration.locked ? "Rooms" : "Manage Rooms", rooms, statuses: ADMIN_ROOM_STATUSES, types: ROOM_TYPES, integration, canSync: true });
+});
+
+// POST /admin/rooms/sync — pull every room from FrontDeskFlow now.
+export const syncRoomsAction = wrap(async (req, res) => {
+  const r = await syncAllRooms({ trigger: "manual" });
+  const c = r.counts;
+  req.flash("success_msg", `FrontDeskFlow sync finished: ${c.created} created, ${c.updated} updated, ${c.unchanged} unchanged${c.errors ? `, ${c.errors} failed` : ""}.`);
+  res.redirect(req.get("Referer") || "/rooms");
 });
 
 export const createRoomAction = wrap(async (req, res) => {
@@ -56,6 +67,8 @@ export const integrationsPage = wrap(async (req, res) => {
   const [overview, hr] = await Promise.all([integrationOverview(), hrExportStats()]);
   res.render("admin/integrations", {
     title: "Integrations",
+    integration: await connectionState(),
+    canSync: true,
     config: integrationConfigSummary(),
     events: toPlain(overview.recent),
     failed: overview.failed,

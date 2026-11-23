@@ -16,5 +16,8 @@ export const Room = sequelize.define("Room", {
   // front-desk system; it is what makes a repeated room sync an update instead of a duplicate.
   externalId: { type: DataTypes.STRING(100), unique: true },
   description: { type: DataTypes.TEXT },
-  externalSyncedAt: { type: DataTypes.DATE }
+  externalSyncedAt: { type: DataTypes.DATE },
+  // Set when FrontDeskFlow deletes/archives the room. The row is kept (never destroyed) so its cleaning tasks, work
+  // orders and inspections stay intact; archived rooms are only left out of the lists used for new work.
+  archivedAt: { type: DataTypes.DATE }
 });

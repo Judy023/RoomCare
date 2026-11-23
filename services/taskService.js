@@ -69,7 +69,7 @@ export const listForHousekeeper = async (housekeeperId) => {
 // Vacant dirty rooms that nobody has been assigned to clean yet (no open task, or only an unassigned PMS task).
 export const roomsNeedingTask = async () => {
   const rooms = await Room.findAll({
-    where: { status: RoomStatus.VACANT_DIRTY },
+    where: { status: RoomStatus.VACANT_DIRTY, archivedAt: null },
     include: [{ model: CleaningTask, as: "tasks", required: false, where: { status: ACTIVE_TASK_STATUSES } }],
     order: [["floor", "ASC"], ["roomNo", "ASC"]],
   });
@@ -79,7 +79,7 @@ export const roomsNeedingTask = async () => {
 // Every vacant dirty room, with its open task (if one is already assigned) — for the admin overview.
 export const vacantDirtyRooms = () =>
   Room.findAll({
-    where: { status: RoomStatus.VACANT_DIRTY },
+    where: { status: RoomStatus.VACANT_DIRTY, archivedAt: null },
     include: [{
       model: CleaningTask, as: "tasks", required: false, where: { status: ACTIVE_TASK_STATUSES },
       include: [{ model: User, as: "housekeeper", attributes: ["id", "name"] }],

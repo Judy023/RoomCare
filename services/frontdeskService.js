@@ -16,6 +16,7 @@ import { PMS } from "../config/integrations.js";
 import { AppError } from "../utils/http.js";
 import { logAction } from "./logService.js";
 import { handleRoomVacated } from "./pmsIntegrationService.js";
+import { recordRoomFailure, recordRoomSuccess } from "./roomIntegrationService.js";
 
 const ID = /^[A-Za-z0-9._:\-/]{1,100}$/;
 const ROOM_NO = /^[A-Za-z0-9-]{1,20}$/;
@@ -41,6 +42,8 @@ const roomDto = (room, openTask = null) => ({
   housekeepingStatus: housekeepingOf(room),
   occupancyStatus: occupancyOf(room),
   outOfOrder: room.status === RoomStatus.OUT_OF_ORDER,
+  archived: Boolean(room.archivedAt),
+  archivedAt: iso(room.archivedAt),
   openCleaningTask: openTask ? { taskCode: openTask.code, status: openTask.status, statusLabel: taskLabel(openTask) } : null,
   lastSyncedAt: iso(room.externalSyncedAt),
   updatedAt: iso(room.updatedAt),
@@ -100,6 +103,10 @@ const validateRoomBody = (body, { partial }) => {
     out.occupancy = parseOccupancy(occ);
     if (!out.occupancy) errors.push({ field: "roomStatus", message: 'must be "Occupied" or "Vacant" (occupancy; housekeeping status is owned by RoomCare)' });
   }
+  if (b.archived !== undefined) {
+    if (typeof b.archived !== "boolean") errors.push({ field: "archived", message: "must be true or false (to archive a room use DELETE /rooms/:externalRoomId)" });
+    else out.archived = b.archived;
+  }
   if (has("housekeepingStatus")) {
     if (!HOUSEKEEPING[String(b.housekeepingStatus).toLowerCase()]) errors.push({ field: "housekeepingStatus", message: 'must be "Dirty", "Clean" or "Inspected"' });
     else out.housekeeping = String(b.housekeepingStatus).toLowerCase();
@@ -137,9 +144,22 @@ const findByExternal = async (externalRoomId, opts = {}) => {
 
 // ── Room synchronization ──────────────────────────────────────────────────────────────────────────
 
+// A failed room request flips the connection state to "Synchronization Error" and is shown on the Integrations page.
+const tracked = (eventType, fn) => async (...args) => {
+  const externalRoomId = typeof args[0] === "string" ? args[0] : args[0]?.externalRoomId ?? null;
+  try {
+    const result = await fn(...args);
+    if (!result.duplicate) await recordRoomSuccess(eventType, { externalRoomId, roomNumber: result.room?.roomNumber ?? null });
+    return result;
+  } catch (err) {
+    await recordRoomFailure(eventType, err, { externalRoomId, status: err?.status || 500 });
+    throw err;
+  }
+};
+
 // POST /rooms. Returns { created, linked, room }. Sending the same room again is not an error: it returns the
 // existing record (created: false). A room entered by hand in RoomCare with the same number is linked, not duplicated.
-export const syncRoom = async (body, idempotencyKey) => {
+export const syncRoom = tracked("RoomSynced", async (body, idempotencyKey) => {
   const data = validateRoomBody(body, { partial: false });
   const eventId = eventIdOf(body, idempotencyKey);
   if (await alreadySeen("RoomSynced", eventId, body)) {
@@ -180,10 +200,10 @@ export const syncRoom = async (body, idempotencyKey) => {
     await logAction(null, result.created ? "FRONTDESK_ROOM_CREATE" : "FRONTDESK_ROOM_LINK", "Room", room.id, `Room ${room.roomNo} ← front-desk room ${room.externalId}`);
   }
   return { ...result, room: roomDto(room) };
-};
+});
 
 // PUT /rooms/:externalRoomId — partial update. housekeepingStatus is ignored: RoomCare owns it.
-export const updateSyncedRoom = async (externalRoomId, body, idempotencyKey) => {
+export const updateSyncedRoom = tracked("RoomUpdated", async (externalRoomId, body, idempotencyKey) => {
   const data = validateRoomBody(body, { partial: true });
   const eventId = eventIdOf(body, idempotencyKey);
   if (await alreadySeen("RoomUpdated", eventId, body)) return { duplicate: true, room: roomDto(await findByExternal(externalRoomId)) };
@@ -197,6 +217,8 @@ export const updateSyncedRoom = async (externalRoomId, body, idempotencyKey) => 
       }
       const changes = { externalSyncedAt: new Date() };
       for (const k of ["roomNo", "type", "floor", "description"]) if (data[k] !== undefined) changes[k] = data[k];
+      if (data.archived === false) changes.archivedAt = null;
+      if (data.archived === true && !room.archivedAt) changes.archivedAt = new Date();
 
       if (data.occupancy === "Occupied" && room.status !== RoomStatus.OCCUPIED) {
         if (room.status === RoomStatus.CLEANING) throw new AppError(`Room ${room.roomNo} is being cleaned and cannot be marked occupied yet`, 409);
@@ -215,7 +237,22 @@ export const updateSyncedRoom = async (externalRoomId, body, idempotencyKey) => 
     if (err instanceof UniqueConstraintError) throw new AppError("Room number is already used by another room", 409);
     throw err;
   }
-};
+});
+
+// DELETE /rooms/:externalRoomId — FrontDeskFlow deleted or archived the room. The row is never destroyed: it is marked
+// archived, so cleaning tasks, work orders and inspections keep pointing at it. Archiving twice is harmless.
+export const archiveSyncedRoom = tracked("RoomArchived", async (externalRoomId, body, idempotencyKey) => {
+  const eventId = eventIdOf(body, idempotencyKey);
+  if (await alreadySeen("RoomArchived", eventId, { externalRoomId })) return { duplicate: true, openTasks: 0, room: roomDto(await findByExternal(externalRoomId)) };
+  const room = await findByExternal(externalRoomId);
+  const already = Boolean(room.archivedAt);
+  if (!already) {
+    await room.update({ archivedAt: new Date(), externalSyncedAt: new Date() });
+    await logAction(null, "FRONTDESK_ROOM_ARCHIVE", "Room", room.id, `Room ${room.roomNo} archived: front-desk room ${room.externalId} was deleted`);
+  }
+  const openTasks = await CleaningTask.count({ where: { roomId: room.id, status: ACTIVE_TASK_STATUSES } });
+  return { duplicate: false, alreadyArchived: already, openTasks, room: roomDto(room) };
+});
 
 export const getSyncedRoom = async (externalRoomId) => {
   const room = await findByExternal(externalRoomId);
@@ -249,7 +286,10 @@ export const listSyncedRooms = async (q) => {
     else if (where.status) { if ((o === "Occupied") !== (where.status === RoomStatus.OCCUPIED)) where.id = 0; }
     else where.status = o === "Occupied" ? RoomStatus.OCCUPIED : { [Op.ne]: RoomStatus.OCCUPIED };
   }
+  if (q.archived !== undefined && !["true", "false", "all"].includes(String(q.archived))) errors.push({ field: "archived", message: "must be true, false or all" });
   if (errors.length) fail(errors);
+  if (q.archived === "true") where.archivedAt = { [Op.ne]: null };
+  else if (q.archived !== "all") where.archivedAt = null;
   const updatedSince = parseSince(q.updated_since, "updated_since");
   if (updatedSince) where.updatedAt = { [Op.gte]: updatedSince };
   const { rows, count } = await Room.findAndCountAll({ where, order: [["floor", "ASC"], ["roomNo", "ASC"]], limit, offset });

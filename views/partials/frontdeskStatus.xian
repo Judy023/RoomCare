@@ -1,0 +1,14 @@
+<div class="mb-5 rounded-2xl border p-4 text-sm {{#if integration.connected}}border-leaf/30 bg-sage{{else if integration.syncError}}border-terracotta/30 bg-terracotta-soft{{else}}border-dashed border-gold/40 bg-gold-soft/50{{/if}}">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <span class="text-[11px] font-semibold uppercase tracking-[0.16em] text-moss">FrontDeskFlow room sync</span>
+      <div class="mt-0.5 font-semibold {{#if integration.connected}}text-leaf{{else if integration.syncError}}text-terracotta{{else}}text-gold-deep{{/if}}">{{integration.label}}</div>
+    </div>
+    {{#if canSync}}<form method="POST" action="/admin/rooms/sync"><button class="btn-secondary btn-sm">Sync now</button></form>{{/if}}
+  </div>
+  <p class="mt-2 text-moss">
+    {{#if integration.connected}}Rooms are received from FrontDeskFlow{{#if integration.lastSuccessAt}} · last successful sync {{formatDate integration.lastSuccessAt}}{{/if}} · {{integration.linkedRooms}} synchronized room(s). FrontDeskFlow adds, edits and deletes rooms; RoomCare only displays them and runs housekeeping and maintenance on them.{{/if}}
+    {{#if integration.syncError}}<b>The last synchronization failed:</b> {{integration.lastError}}{{#if integration.lastErrorAt}} ({{formatDate integration.lastErrorAt}}){{/if}}. The rooms shown are the last data received and may be out of date. Room records stay managed by FrontDeskFlow.{{/if}}
+    {{#if integration.notConnected}}RoomCare is not receiving rooms from FrontDeskFlow yet, so nothing shown here has been synchronized. {{#if integration.locked}}Room records are managed by FrontDeskFlow.{{else}}Until the connection is active, rooms can still be managed here for development and testing; after the first successful synchronization that is switched off.{{/if}}{{/if}}
+  </p>
+</div>

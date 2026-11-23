@@ -32,6 +32,20 @@ When FrontDeskFlow publishes its API, set the variables above and edit `config/f
 
 Database: run `npm run migrate:integrations` once (adds `Rooms.externalId` [unique], `Rooms.description`, `Rooms.externalSyncedAt`; the rest already existed). `npm run migrate:integrations -- --revert` backs up and removes them.
 
+## Room authority and connection state
+
+FrontDeskFlow is the single source of truth for room records (`Rooms.externalId` is the match key, never the room number alone).
+
+| State | Meaning |
+|---|---|
+| **Not Connected** | No room has ever been received (no room has an `externalId`, no clean room sync has run). RoomCare still lets admins add / edit / delete rooms, for development and testing. |
+| **Connected** | FrontDeskFlow has delivered rooms and the latest room request or sync succeeded. |
+| **Synchronization Error** | The latest room request or sync failed (also: finished with failed rooms). Shown with the reason on the Rooms and Integrations pages; cleared by the next success. |
+
+State is derived from `integration_events` and `Rooms`, not from a setting, so it cannot claim a connection that never happened. Every room request, success or failure, is stored there (visible on **Admin → Integrations**) and in the system log.
+
+**Lock.** Once FrontDeskFlow has delivered rooms (Connected or Synchronization Error) RoomCare refuses room add / edit / delete with **403** in `services/roomService.js`, for every route, not only in the UI; the buttons and forms are removed as well. Only the housekeeping status can still be overridden by an admin. `FRONTDESK_ROOM_AUTHORITY` = `auto` (default, locks on first sync) · `frontdesk` (locked from the start; set this at go-live) · `local` (never lock; development only).
+
 ## Common rules
 
 **Headers (all endpoints):** `Authorization: Bearer <key>` or `X-API-Key: <key>`; `Content-Type: application/json` for bodies. Optional `Idempotency-Key` (see below).
@@ -89,6 +103,9 @@ Partial update; send only changed fields (at least one). `roomStatus: "Occupied"
 { "roomType": "Junior Suite", "floor": 2, "description": "Renovated" }
 ```
 Response: `data` as above, plus `ignoredFields: ["housekeepingStatus"]` if that was sent. Codes: 200, 404 (not synchronized), 409, 422.
+
+### DELETE `/api/integrations/frontdesk/rooms/{externalRoomId}`
+FrontDeskFlow deleted or archived the room. RoomCare **never destroys the row**: it sets `archivedAt`, so cleaning tasks, work orders and inspections stay linked. Archived rooms disappear from the board, assign/inspect/work-order pickers and `GET /rooms` (use `?archived=true|all`), but their history and room page remain. Repeating the call is harmless (`alreadyArchived: true`). The response says how many cleaning tasks are still open (`openCleaningTasks`). To bring a room back send `PUT` with `{"archived": false}` (a pull sync that lists the room again also restores it). RoomCare does **not** infer deletions from a pull sync's list; FrontDeskFlow must send this call.
 
 ### POST `/api/integrations/frontdesk/checkout`
 Guest checked out. Room becomes **Dirty** (`VACANT_DIRTY`), one unassigned cleaning task is created (source `PMS`) and admins are notified on the dashboard to assign a housekeeper.
