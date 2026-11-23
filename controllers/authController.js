@@ -29,7 +29,6 @@ import { authenticate, registerUser as registerAccount } from "../services/userS
 import { SELF_REGISTER_ROLES } from "../models/enums.js";
 import { logAction } from "../services/logService.js";
 import { wrap } from "../utils/http.js";
-await sequelize.sync();
 
 
 export const loginPage = (req, res) => {

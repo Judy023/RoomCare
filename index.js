@@ -29,6 +29,7 @@ import path from "path";
 import session from "express-session";
 import flash from "connect-flash";
 import router from "./routes/index.js";
+import { sequelize } from "./models/index.js";
 import { startIntegrationWorker } from "./services/pmsIntegrationService.js";
 import { startFrontdeskSyncWorker } from "./services/frontdeskSyncService.js";
 import fs from 'fs';
@@ -137,7 +138,13 @@ export default app;
 
 // Start the HTTP server; resolves once the server is listening.
 // Exported so the Electron main process can control startup itself.
-export const startServer = (port = PORT) => {
+export const startServer = async (port = PORT) => {
+  // A database problem is logged instead of crashing, so the site still answers and the cause shows in Runtime logs.
+  try {
+    await sequelize.sync();
+  } catch (err) {
+    console.error("❌ Database connection failed. Check DB_HOST / DB_NAME / DB_USER / DB_PASS:", err.message);
+  }
   return new Promise((resolve, reject) => {
     const server = app.listen(port, () => {
       console.log(`🔥 XianFire running at http://localhost:${port}`);

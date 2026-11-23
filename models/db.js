@@ -27,11 +27,13 @@
 import "../config/env.js";
 import { Sequelize } from "sequelize";
 
-export const DB_NAME = process.env.DB_NAME || "RoomCare";
+// DB_* names are ours; DATABASE_* are the names Hostinger's panel creates. Either works.
+const env = process.env;
+export const DB_NAME = env.DB_NAME || env.DATABASE_NAME || "RoomCare";
 
-export const sequelize = new Sequelize(DB_NAME, process.env.DB_USER || "root", process.env.DB_PASS || "", {
-  host: process.env.DB_HOST || "localhost",
-  port: Number(process.env.DB_PORT) || 3306,
+export const sequelize = new Sequelize(DB_NAME, env.DB_USER || env.DATABASE_USERNAME || "root", env.DB_PASS ?? env.DATABASE_PASSWORD ?? "", {
+  host: env.DB_HOST || env.DATABASE_HOST || "localhost",
+  port: Number(env.DB_PORT || env.DATABASE_PORT) || 3306,
   dialect: "mysql",
   logging: false
 });
