@@ -124,8 +124,8 @@ export const handleRoomVacated = async (body) => {
   if (created) {
     await notifyRoles("admin", {
       channel: "PUSH",
-      title: `Room ${room.roomNo} vacated (PMS)`,
-      message: `Guest checked out. ${created.code} was created and is waiting for a housekeeper.`,
+      title: `Room ${room.roomNo} is dirty (FrontDesk check-out)`,
+      message: `FrontDesk reported the guest check-out. Room ${room.roomNo} needs cleaning: ${created.code} was created and is waiting for a housekeeper.`,
       link: `/tasks?roomId=${room.id}`,
     });
   }

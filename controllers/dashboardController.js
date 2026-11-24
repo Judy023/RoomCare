@@ -6,13 +6,14 @@ import { inspectionQueue, awaitingCheckout } from "../services/inspectionService
 import { lowStockItems } from "../services/inventoryService.js";
 import { TaskStatus, WorkOrderStatus } from "../models/enums.js";
 import { wrap, toPlain } from "../utils/http.js";
+import { connectionState } from "../services/roomIntegrationService.js";
 
 // Admins get the turnover overview; every other role lands on its own work list.
 export const dashboardPage = wrap(async (req, res) => {
   const role = req.user.role;
   if (role !== "admin") return res.redirect(LANDING[role] || "/login");
 
-  const [roomBoard, needTask, inProgress, openWos, onHold, toInspect, needCheckout, lowStock, assignOptions] = await Promise.all([
+  const [roomBoard, needTask, inProgress, openWos, onHold, toInspect, needCheckout, lowStock, assignOptions, integration] = await Promise.all([
     board(),
     vacantDirtyRooms(),
     listTasks({ status: TaskStatus.IN_PROGRESS }),
@@ -22,6 +23,7 @@ export const dashboardPage = wrap(async (req, res) => {
     awaitingCheckout(),
     lowStockItems(),
     assignFormOptions(),
+    connectionState(),
   ]);
   res.render("dashboard", {
     title: "Overview",
@@ -33,6 +35,8 @@ export const dashboardPage = wrap(async (req, res) => {
     onHold,
     toInspect,
     needCheckout: toPlain(needCheckout),
+    // Check-out comes from FrontDesk once it is the room authority (see roomService.checkOut).
+    canCheckOut: !integration.locked,
     lowStock: toPlain(lowStock),
     ...assignOptions,
   });

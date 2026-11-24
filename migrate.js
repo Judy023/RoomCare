@@ -1,7 +1,10 @@
 
 import { sequelize } from "./models/index.js";
-import { ensureDatabase, seedDatabase } from "./seed.js";
+import { ensureDatabase, seedDatabase, assertNotProduction } from "./seed.js";
 import inquirer from "inquirer";
+
+// This script recreates every table (sync force). Stop before asking anything when run against production.
+try { assertNotProduction("npm run migrate"); } catch (err) { console.error(`❌ ${err.message}`); process.exit(1); }
 
 const { createDb, seed } = await inquirer.prompt([
   {

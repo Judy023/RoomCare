@@ -3,9 +3,23 @@
 //   2. creates the first admin from ADMIN_EMAIL / ADMIN_PASSWORD (set them in .env, run, then remove the password)
 //
 //   npm run setup:production
+//
+// Not needed on every deployment: the app itself creates missing tables at startup. Run it once by hand to create the
+// first admin — never as a build command.
+import { getDatabaseConfig } from "./config/env.js"; // loads .env first
 import bcrypt from "bcrypt";
-import { sequelize, User, SystemLog } from "./models/index.js";
-import "./config/env.js";
+
+// Same settings and variable names as the app (config/env.js), but always strict: never fall back to root/no password.
+const { missing, sources } = getDatabaseConfig({ strict: true });
+if (missing.length) {
+  console.error(`❌ Setup stopped: database settings not found in the environment: ${missing.join("; ")}.`);
+  console.error("   Set them in Hostinger hPanel → Node.js app → Environment variables (or in a .env file next to this script), then run again.");
+  process.exit(1);
+}
+console.log(`⚙️  Database settings from: ${Object.entries(sources).map(([k, v]) => `${k}=${v}`).join(", ")}`);
+
+// Imported only after the check above (static imports would run first).
+const { sequelize, User, SystemLog } = await import("./models/index.js");
 
 try {
   await sequelize.authenticate();

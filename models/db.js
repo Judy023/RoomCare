@@ -24,16 +24,29 @@
     SOFTWARE.
     */
 
-import "../config/env.js";
+// config/env.js must be the first import: ES modules evaluate their imports in order, depth-first, so this loads
+// .env (when present) before the Sequelize instance below is created, no matter which file imports the models.
+import { getDatabaseConfig, checkEnvironment } from "../config/env.js";
 import { Sequelize } from "sequelize";
 
-// DB_* names are ours; DATABASE_* are the names Hostinger's panel creates. Either works.
-const env = process.env;
-export const DB_NAME = env.DB_NAME || env.DATABASE_NAME || "RoomCare";
+// Variable names accepted for each setting are listed in config/env.js (DB_USER or DB_USERNAME, DB_PASS or DB_PASSWORD, …).
+const db = getDatabaseConfig();
+if (db.missing.length) {
+  // Production only (development has local defaults). Never connect as root/no password by accident.
+  // Report every missing required variable (e.g. SESSION_SECRET too), since index.js's own check never runs after this.
+  const missing = checkEnvironment().required;
+  const err = new Error(`Missing required environment variable(s): ${missing.join("; ")}. Set them in Hostinger hPanel → Node.js app → Environment variables, then restart.`);
+  err.code = "MISSING_ENV";
+  err.missing = missing;
+  throw err;
+}
 
-export const sequelize = new Sequelize(DB_NAME, env.DB_USER || env.DATABASE_USERNAME || "root", env.DB_PASS ?? env.DATABASE_PASSWORD ?? "", {
-  host: env.DB_HOST || env.DATABASE_HOST || "localhost",
-  port: Number(env.DB_PORT || env.DATABASE_PORT) || 3306,
-  dialect: "mysql",
+export const DB_NAME = db.database;
+export const dbConfigSources = db.sources;
+
+export const sequelize = new Sequelize(db.database, db.username, db.password, {
+  host: db.host,
+  port: db.port,
+  dialect: db.dialect,
   logging: false
 });

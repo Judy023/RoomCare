@@ -14,15 +14,17 @@ export const boardPage = wrap(async (req, res) => {
     .map((f) => ({ ...f, rooms: f.rooms.filter((r) => ADMIN_ROOM_STATUSES.includes(r.status)) }))
     .filter((f) => f.rooms.length);
   roomBoard.shown = roomBoard.floors.reduce((n, f) => n + f.rooms.length, 0);
+  const integration = await connectionState();
   res.render("rooms/board", {
     title: "Room Status Board",
     board: roomBoard,
     status,
     showArchived,
-    integration: await connectionState(),
+    integration,
     canSync: req.user.role === "admin",
     now: new Date(),
-    canCheckInOut: req.user.role === "admin",
+    // Check-out comes from FrontDesk once it is the room authority (see roomService.checkOut).
+    canCheckInOut: req.user.role === "admin" && !integration.locked,
   });
 });
 
@@ -35,11 +37,12 @@ export const roomPage = wrap(async (req, res) => {
   const canAssign = role === "admin"
     && [RoomStatus.VACANT_DIRTY, RoomStatus.OCCUPIED].includes(room.status)
     && openTask?.status !== TaskStatus.IN_PROGRESS;
+  const integration = await connectionState();
   res.render("rooms/show", {
     title: `Room ${room.roomNo}`,
     room: toPlain(room),
-    canCheckInOut: role === "admin",
-    integration: await connectionState(),
+    canCheckInOut: role === "admin" && !integration.locked,
+    integration,
     canAssign,
     reassign: Boolean(openTask?.housekeeperId),
     ...(canAssign ? await assignFormOptions() : {}),

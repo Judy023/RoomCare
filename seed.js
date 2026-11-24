@@ -5,20 +5,28 @@
 import bcrypt from "bcrypt";
 import { Sequelize } from "sequelize";
 import { pathToFileURL } from "url";
+import { getDatabaseConfig } from "./config/env.js";
 import { DB_NAME } from "./models/db.js";
 import { sequelize, User, InventoryItem, SystemLog } from "./models/index.js";
 
 const DEMO_PASSWORD = "password123";
 
+// Seeding drops every table. Refuse in production so live data can never be wiped by a stray `npm run seed`/`migrate`.
+export const assertNotProduction = (what) => {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(`${what} drops and recreates all tables and is disabled when NODE_ENV=production. Use "npm run setup:production" instead (it never deletes data).`);
+  }
+};
+
 export const ensureDatabase = async () => {
-  const root = new Sequelize("", process.env.DB_USER || "root", process.env.DB_PASS || "", {
-    host: process.env.DB_HOST || "localhost", port: Number(process.env.DB_PORT) || 3306, dialect: "mysql", logging: false,
-  });
-  await root.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;`);
-  await root.close();
+  const { username, password, host, port, dialect } = getDatabaseConfig();
+  const server = new Sequelize("", username, password, { host, port, dialect, logging: false });
+  await server.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;`);
+  await server.close();
 };
 
 export const seedDatabase = async () => {
+  assertNotProduction("Seeding");
   await sequelize.sync({ force: true });
   const password = await bcrypt.hash(DEMO_PASSWORD, 10);
 
@@ -57,6 +65,7 @@ export const seedDatabase = async () => {
 const isDirectRun = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isDirectRun) {
   try {
+    assertNotProduction("npm run seed");
     await ensureDatabase();
     const counts = await seedDatabase();
     console.log("✅ RoomCare users and inventory loaded:", counts);

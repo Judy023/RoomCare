@@ -85,8 +85,17 @@ export const setStatus = async (room, status, userId, reason = "") => {
   return room;
 };
 
+// Once FrontDesk is the room authority, guest occupancy (check-out / check-in) is recorded in FrontDesk only. Its
+// check-out event is what makes a room Dirty and notifies the admins, so RoomCare never raises that notification itself.
+// A local check-in is refused too: the next sync would see the room vacant in FrontDesk and report a false check-out.
+export const OCCUPANCY_MANAGED_BY_FRONTDESK = "Guest check-out and check-in are recorded in FrontDesk. RoomCare marks the room Dirty and notifies admins when FrontDesk reports the check-out.";
+const assertLocalOccupancy = async (source) => {
+  if (source === "Admin" && (await connectionState()).locked) throw new AppError(OCCUPANCY_MANAGED_BY_FRONTDESK, 403);
+};
+
 // Admin / PMS check-out: OCCUPIED → VACANT_DIRTY, then admins are told to assign a cleaner.
 export const checkOut = async (room, userId, source = "Admin") => {
+  await assertLocalOccupancy(source);
   if (room.status !== RoomStatus.OCCUPIED) {
     throw new AppError(`Room ${room.roomNo} is not occupied (it is ${label(room.status)}).`);
   }
@@ -102,6 +111,7 @@ export const checkOut = async (room, userId, source = "Admin") => {
 
 // Only rooms that passed inspection are sellable and can be given to the next guest.
 export const checkIn = async (room, userId, source = "Admin") => {
+  await assertLocalOccupancy(source);
   if (room.status !== RoomStatus.INSPECTED) {
     throw new AppError(`Room ${room.roomNo} is not ready — only vacant rooms can be assigned to a guest (it is ${label(room.status)}).`);
   }

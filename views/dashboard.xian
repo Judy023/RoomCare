@@ -88,7 +88,7 @@
         {{#each needCheckout}}
         <li class="flex items-center justify-between gap-3">
           <span><a href="/rooms/{{id}}" class="link">Room {{roomNo}}</a> <span class="text-moss">· {{workOrders.length}} repair(s) resolved, guest still in room</span></span>
-          <form method="POST" action="/rooms/{{id}}/checkout" onsubmit="return confirm('Check out the guest in room {{roomNo}}?')"><button class="btn-secondary btn-sm">Check out</button></form>
+          {{#if @root.canCheckOut}}<form method="POST" action="/rooms/{{id}}/checkout" onsubmit="return confirm('Check out the guest in room {{roomNo}}?')"><button class="btn-secondary btn-sm">Check out</button></form>{{else}}<span class="text-xs text-moss">Check out in FrontDesk</span>{{/if}}
         </li>
         {{/each}}
       </ul>

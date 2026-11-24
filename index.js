@@ -23,13 +23,14 @@
     SOFTWARE.
     */
     
-import "./config/env.js";
+import { envFileLoaded, checkEnvironment } from "./config/env.js";
 import express from "express";
 import path from "path";
 import session from "express-session";
 import flash from "connect-flash";
 import router from "./routes/index.js";
 import { sequelize } from "./models/index.js";
+import { dbConfigSources } from "./models/db.js";
 import { startIntegrationWorker } from "./services/pmsIntegrationService.js";
 import { startFrontdeskSyncWorker } from "./services/frontdeskSyncService.js";
 import fs from 'fs';
@@ -44,9 +45,17 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isProd = process.env.NODE_ENV === "production";
-if (isProd && !process.env.SESSION_SECRET) {
-  console.error("❌ SESSION_SECRET must be set when NODE_ENV=production.");
-  process.exit(1);
+const envCheck = checkEnvironment();
+console.log(`⚙️  Environment loaded: NODE_ENV=${process.env.NODE_ENV || "(not set)"}, .env file ${envFileLoaded ? "loaded" : "not used"}`);
+// Which variable supplied each database setting (names only, never values), e.g. user=DB_USERNAME, password=DB_PASSWORD.
+console.log(`⚙️  Database settings from: ${Object.entries(dbConfigSources).map(([k, v]) => `${k}=${v}`).join(", ")}`);
+for (const w of envCheck.warnings) console.warn(`⚠️  Not set: ${w}`);
+if (envCheck.required.length) {
+  // Thrown, not process.exit(): server.js catches it and keeps answering with a clear 503 instead of dying silently.
+  const err = new Error(`Missing required environment variable(s): ${envCheck.required.join(", ")}. Set them in Hostinger hPanel → Node.js app → Environment variables, then restart.`);
+  err.code = "MISSING_ENV";
+  err.missing = envCheck.required;
+  throw err;
 }
 // Behind Hostinger's HTTPS proxy: needed for secure cookies and correct client IPs.
 if (isProd) app.set("trust proxy", 1);
@@ -54,7 +63,42 @@ if (isProd) app.set("trust proxy", 1);
 // The FrontDesk webhook is signed over the exact bytes it sends, so keep the raw body for that one route.
 app.use(express.json({ verify: (req, res, buf) => { if (req.originalUrl.startsWith("/api/frontdesk/webhook")) req.rawBody = buf; } }));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(process.cwd(), "public")));
+app.use(express.static(path.join(__dirname, "public")));
+
+// ── Startup state, health check and readiness gate ────────────────────────────────────────────────
+// `gated` is only switched on by startServer(): code that calls app.listen() itself (the tests) is unaffected.
+const startup = { gated: false, dbReady: false, dbError: null, schemaError: null, workers: false, startedAt: new Date() };
+
+// Error code only (e.g. ER_ACCESS_DENIED_ERROR, ECONNREFUSED): useful for diagnosis, never contains credentials.
+const errCode = (err) => err?.original?.code || err?.parent?.code || err?.code || err?.name || "UNKNOWN";
+
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, reject) => setTimeout(() => reject(Object.assign(new Error("timeout"), { code: "TIMEOUT" })), ms).unref())]);
+
+app.get("/health", async (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  let database = startup.dbReady ? "up" : "down";
+  let dbError = startup.dbError;
+  if (startup.dbReady) {
+    try { await withTimeout(sequelize.authenticate(), 3000); } catch (err) { database = "down"; dbError = errCode(err); }
+  }
+  const ok = database === "up";
+  res.status(ok ? 200 : 503).json({
+    status: ok ? (startup.schemaError ? "degraded" : "ok") : "unavailable",
+    uptimeSeconds: Math.round(process.uptime()),
+    database,
+    ...(dbError && !ok ? { databaseError: dbError } : {}),
+    ...(startup.schemaError ? { schemaError: startup.schemaError } : {}),
+    workers: startup.workers ? "running" : "not started",
+  });
+});
+
+// While the database is not reachable every page would fail anyway: answer with a clear 503 instead of 500s.
+app.use((req, res, next) => {
+  if (!startup.gated || startup.dbReady) return next();
+  res.set("Retry-After", "30");
+  if (req.originalUrl.startsWith("/api/")) return res.status(503).json({ error: "Service starting: database not available yet" });
+  res.status(503).type("html").send("<!doctype html><meta charset=utf-8><title>RoomCare is starting</title><body style=\"font-family:system-ui;max-width:32rem;margin:15vh auto;text-align:center\"><h1>RoomCare is starting</h1><p>The database is not available yet. This page will work again in a moment — please refresh.</p></body>");
+});
 
 app.use(session({
   secret: process.env.SESSION_SECRET || "xianfire-secret-key",
@@ -136,24 +180,69 @@ app.use((err, req, res, next) => {
 
 export default app;
 
-// Start the HTTP server; resolves once the server is listening.
-// Exported so the Electron main process can control startup itself.
-export const startServer = async (port = PORT) => {
-  // A database problem is logged instead of crashing, so the site still answers and the cause shows in Runtime logs.
-  try {
-    await sequelize.sync();
-  } catch (err) {
-    console.error("❌ Database connection failed. Check DB_HOST / DB_NAME / DB_USER / DB_PASS:", err.message);
+// Integration workers need the database, so they start once it is ready. Each is isolated: one failing never stops the other.
+const startWorkers = () => {
+  if (startup.workers) return;
+  startup.workers = true;
+  for (const [name, start] of [["PMS integration", startIntegrationWorker], ["FrontDeskFlow room sync", startFrontdeskSyncWorker]]) {
+    try { start(); } catch (err) { console.error(`❌ ${name} worker could not start:`, err); }
   }
-  return new Promise((resolve, reject) => {
-    const server = app.listen(port, () => {
-      console.log(`🔥 XianFire running at http://localhost:${port}`);
-      startIntegrationWorker();
-      startFrontdeskSyncWorker();
+  console.log("✅ Integration workers started");
+};
+
+// Connects to MySQL and creates missing tables (sync() without force/alter never drops or changes existing tables or data).
+// Retries with backoff until it succeeds; resolves after the FIRST attempt either way.
+const DB_RETRY_MAX_MS = 60000;
+const connectDatabase = () => new Promise((resolveFirst) => {
+  let attempt = 0;
+  const tryOnce = async () => {
+    attempt++;
+    try {
+      await sequelize.authenticate();
+    } catch (err) {
+      const delay = Math.min(5000 * 2 ** (attempt - 1), DB_RETRY_MAX_MS);
+      startup.dbError = errCode(err);
+      const o = sequelize.config;
+      console.error(`❌ Database connection failed (attempt ${attempt}) to ${o.host}:${o.port}/${o.database} as ${o.username}: [${startup.dbError}] ${err.message}. Check DB_HOST / DB_PORT / DB_NAME / DB_USER (or DB_USERNAME) / DB_PASS (or DB_PASSWORD), and that this database user is allowed remote access in hPanel. Retrying in ${delay / 1000}s.`);
+      setTimeout(tryOnce, delay);
+      return resolveFirst(false);
+    }
+    try {
+      await sequelize.sync();
+    } catch (err) {
+      // Reachable but table creation failed: existing tables still serve, so keep running and report it loudly.
+      startup.schemaError = errCode(err);
+      console.error(`❌ Database connected but table sync failed: [${startup.schemaError}] ${err.message}`);
+    }
+    startup.dbReady = true;
+    startup.dbError = null;
+    console.log(`✅ Database connected (${sequelize.config.database})`);
+    startWorkers();
+    resolveFirst(true);
+  };
+  tryOnce();
+});
+
+// Start the HTTP server; resolves once the server is listening and the first database attempt has finished.
+// Exported so the Electron main process can control startup itself. Calling it again returns the same server.
+// The server listens BEFORE the database is contacted, so the hosting proxy always gets an answer (never a bare 503).
+let starting = null;
+export const startServer = (port = PORT, host = process.env.HOST) => {
+  if (starting) return starting;
+  startup.gated = true;
+  console.log("🚀 RoomCare startup: opening HTTP server…");
+  starting = new Promise((resolve, reject) => {
+    const server = app.listen(port, host || undefined);
+    server.once("error", (err) => { starting = null; reject(err); });
+    server.once("listening", async () => {
+      const addr = server.address();
+      console.log(`🔥 XianFire listening on ${typeof addr === "string" ? addr : `port ${addr?.port ?? port}`}`);
+      await connectDatabase();
+      console.log(startup.dbReady ? "✅ RoomCare startup complete" : "⚠️  RoomCare is up but waiting for the database (pages answer 503 until it connects; see /health)");
       resolve(server);
     });
-    server.on("error", reject);
   });
+  return starting;
 };
 
 // Auto-start only when executed directly (node index.js).
